@@ -12,12 +12,12 @@ app.http('discordCommandHandler', {
         const PUBLIC_KEY = process.env.DISCORD_PUBLIC_KEY;
 
         context.log('Attempting to get headers...');
-        const signature = request.headers.get('X-Signature-Ed25519');
-        const timestamp = request.headers.get('X-Signature-Timestamp');
+        const signature = await request.headers.get('X-Signature-Ed25519');
+        const timestamp = await request.headers.get('X-Signature-Timestamp');
         const body = await request.text();
 
         context.log('Attempting to verify request...');
-        const isVerified = nacl.sign.detached.verify(
+        const isVerified = await nacl.sign.detached.verify(
             Buffer.from(timestamp + body),
             Buffer.from(signature, "hex"),
             Buffer.from(PUBLIC_KEY, "hex")
