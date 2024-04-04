@@ -16,6 +16,9 @@ app.http('discordCommandHandler', {
         const timestamp = await request.headers.get('X-Signature-Timestamp');
         const body = await request.text();
 
+        context.log("Timestamp: " + timestamp);
+        context.log("Body: " + body);
+
         context.log('Attempting to verify request...');
         const isVerified = await nacl.sign.detached.verify(
             Buffer.from(timestamp + body),
@@ -28,15 +31,9 @@ app.http('discordCommandHandler', {
             context.log("Request not verified, returning 401");
             return {
                 status: 401,
-                body: JSON.stringify({ error: 'invalid request' })
+                body: JSON.stringify({ error: 'invalid request signature' })
             };
         }
-    
-        context.log("Req Headers: ");
-        context.log(JSON.stringify(request.headers));
-
-        context.log('Req Body: ');
-        context.log(JSON.stringify(request.body));
 
         context.log("Checking for PING type message...");
         if (request.body.type == 1) {
