@@ -33,14 +33,14 @@ app.http('discordCommandHandler', {
             context.log("Request not verified, returning 401");
             return {
                 status: 401,
-                body: JSON.stringify({ error: 'invalid request signature' })
+                body: { error: 'invalid request signature' }
             };
         }
 
         // If request is a PING type message, return PONG (ACK type 1)
         if (bodyObject.type == 1) {
             context.log("Request is a PING, returning PONG");
-            return { body: { "type": 1 }, status: 200 };
+            return { jsonBody: { type: 1 }, status: 200 };
         }
 
         // Completed validation, completed PONG, this is where you do the command handling
