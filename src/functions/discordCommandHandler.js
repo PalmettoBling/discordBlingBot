@@ -40,9 +40,7 @@ app.http('discordCommandHandler', {
         // If request is a PING type message, return PONG (ACK type 1)
         if (bodyObject.type == 1) {
             context.log("Request is a PING, returning PONG");
-            return context.res = { 
-                body: { "type": 1 }
-            };
+            return { body: { "type": 1 }, status: 200 };
         }
 
         // Completed validation, completed PONG, this is where you do the command handling
