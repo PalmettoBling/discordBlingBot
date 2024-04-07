@@ -1,5 +1,6 @@
 const { app } = require('@azure/functions');
 const nacl = require('tweetnacl');
+const http = require('http');
 
 app.http('discordCommandHandler', {
     methods: ['GET', 'POST'],
@@ -11,26 +12,25 @@ app.http('discordCommandHandler', {
 
         // Getting Headers and body from request
         // Body is also parsed into an object for reference
-        context.log('Attempting to get headers...');
+        context.info('Attempting to get headers...');
         const signature = await request.headers.get('X-Signature-Ed25519');
         const timestamp = await request.headers.get('X-Signature-Timestamp');
         const body = await request.text();
         const bodyObject = JSON.parse(body);
-        context.log("Request body: " + body);
-        context.log("Request body object: " + JSON.stringify(bodyObject));
+        context.info("Request body: " + body);
 
         // Verifying request as is required by Discord
-        context.log('Attempting to verify request...');
+        context.info('Attempting to verify request...');
         const isVerified = await nacl.sign.detached.verify(
             Buffer.from(timestamp + body),
             Buffer.from(signature, "hex"),
             Buffer.from(PUBLIC_KEY, "hex")
         );
-        context.log(`Request verification: ${isVerified}`);
+        context.info(`Request verification: ${isVerified}`);
 
         // If request is not verified, return 401
         if (!isVerified) {
-            context.log("Request not verified, returning 401");
+            context.warn("Request not verified, returning 401");
             return {
                 status: 401,
                 body: { error: 'invalid request signature' }
@@ -39,14 +39,14 @@ app.http('discordCommandHandler', {
 
         // If request is a PING type message, return PONG (ACK type 1)
         if (bodyObject.type == 1) {
-            context.log("Request is a PING, returning PONG");
+            context.info("Request is a PING, returning PONG");
             return { jsonBody: { type: 1 }, status: 200 };
         }
 
-        // Completed validation, completed PONG, this is where you do the command handling
-        context.log("Completed request verification, returning 200");
-        context.log("Command name: " + bodyObject.data.name);
-        context.log("Command options: " + JSON.stringify(bodyObject.data.options));
+        // Validation of message is complete and the request is not a PING, so sending the payload to the appropriate function based
+        // on the command name and sending the options along with it.
+        context.info("Sending command to function " + bodyObject.data.name + " with options " + JSON.stringify(bodyObject.data.options));
+
 
         return { body: `Command Complete`, status: 200 };
     }
