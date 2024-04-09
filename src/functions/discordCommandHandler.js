@@ -1,6 +1,7 @@
 const { app } = require('@azure/functions');
 const nacl = require('tweetnacl');
 const http = require('http');
+const { url } = require('inspector');
 
 app.http('discordCommandHandler', {
     methods: ['GET', 'POST'],
@@ -45,9 +46,38 @@ app.http('discordCommandHandler', {
 
         // Validation of message is complete and the request is not a PING, so sending the payload to the appropriate function based
         // on the command name and sending the options along with it.
-        context.info("Sending command to function " + bodyObject.data.name + " with options " + JSON.stringify(bodyObject.data.options));
+        context.info("Sending command to function " + bodyObject.data.name + " with request body of " + JSON.stringify(bodyObject));
+        
+        // Check if the 'name' property exists in the 'data' object of 'bodyObject'
+        if (bodyObject.data.name) {
+            const commandFunctionURI = 'https://discordblingbot.azurewebsites.net/api/' + bodyObject.data.name;
+            const options = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(bodyObject)
+            };
 
-
-        return { body: `Command Complete`, status: 200 };
+            const response = fetch(commandFunctionURI, options);
+            
+            return jsonify({
+                "type": 5,
+                "data": {
+                    "tts": false,
+                    "content": "Please wait while the bot thinks really hard about it...",
+                    "embeds": []
+                }
+            })   
+        } else {
+            return jsonify({
+                "type": 4,
+                "data": {
+                    "tts": false,
+                    "content": "Unknown command. I honestly don't know how this could possibly happen.  You should probably let Bling know...",
+                    "embeds": []
+                }
+            })
+        }
     }
 });
