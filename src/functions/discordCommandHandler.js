@@ -61,23 +61,28 @@ app.http('discordCommandHandler', {
 
             const response = fetch(commandFunctionURI, options);
             
-            return jsonify({
-                "type": 5,
-                "data": {
-                    "tts": false,
-                    "content": "Please wait while the bot thinks really hard about it...",
-                    "embeds": []
+            // JSONIFY DOESN"T EXIST
+            return {
+                jsonBody: {
+                    "type": 5,
+                    "data": {
+                        "tts": false,
+                        "content": "Please wait while the bot thinks really hard about it...",
+                        "embeds": []
+                    }
                 }
-            })   
+            }   
         } else {
-            return jsonify({
-                "type": 4,
-                "data": {
-                    "tts": false,
-                    "content": "Unknown command. I honestly don't know how this could possibly happen.  You should probably let Bling know...",
-                    "embeds": []
+            return {
+                jsonBody: {
+                    "type": 4,
+                    "data": {
+                        "tts": false,
+                        "content": "Unknown command. I honestly don't know how this could possibly happen.  You should probably let Bling know...",
+                        "embeds": []
+                    }
                 }
-            })
+            }
         }
     }
 });
