@@ -1,12 +1,12 @@
-const { app, input } = require('@azure/functions');
-//const CosmosClient = require('@azure/cosmos').CosmosClient;
+const { app } = require('@azure/functions');
+const CosmosClient = require('@azure/cosmos').CosmosClient;
 
 app.http('quote', {
     methods: ['GET', 'POST'],
     authLevel: 'anonymous',
-    extraInputs: [cosmosInput],
     handler: async (request, context) => {
         context.log(`Http function processed request for url "${request.url}"`);
+        let client;
 
         // Getting Headers and body from request
         context.info('Attempting to get headers...');
@@ -24,7 +24,7 @@ app.http('quote', {
         try {
             context.info("Connecting to CosmosDB client...");
             const credential = new DefaultAzureCredential();
-            const client = new CosmosClient(process.env.DB_ENDPOINT, credential);
+            client = await new CosmosClient(process.env.DB_ENDPOINT, credential);
         } catch(err) {
             context.error("Error connecting to CosmosDB client: " + err);
             return {
