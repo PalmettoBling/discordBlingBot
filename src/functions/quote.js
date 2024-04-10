@@ -1,14 +1,6 @@
 const { app, input } = require('@azure/functions');
 //const CosmosClient = require('@azure/cosmos').CosmosClient;
 
-const cosmosInput = input.cosmosDB({
-    databaseName: 'playdatesBot',
-    collectionName: 'xboxplaydatesus',
-    id: '{quoteId}',
-    partitionKey: '/dateAdded',
-    connectionStringSetting: 'CosmosDBConnection'
-})
-
 app.http('quote', {
     methods: ['GET', 'POST'],
     authLevel: 'anonymous',
@@ -27,6 +19,22 @@ app.http('quote', {
         context.info("Request body: " + body);
         const commandOptions = bodyObject.data.options;
         context.info("Command options: " + JSON.stringify(commandOptions));
+
+        // connecting to DB
+        try {
+            context.info("Connecting to CosmosDB client...");
+            const credential = new DefaultAzureCredential();
+            const client = new CosmosClient(process.env.DB_ENDPOINT, credential);
+        } catch(err) {
+            context.error("Error connecting to CosmosDB client: " + err);
+            return {
+                status: 500,
+                body: { error: 'internal server error' }
+            };
+        }
+        
+        const database = client.database("playdatesBot");
+        const container = database.container("xboxplaydatesus");
 
         // Connecting CosmosDB client to quote DB
         /*
@@ -48,10 +56,15 @@ app.http('quote', {
         const quoteId = commandOptions.find(option => option.name === 'id').value;
         if (!quoteId) {
             let min = Math.ceil(0);
-            let max = Math.floor(await db.getTotalQuoteCount(channelName));
+            //let max = Math.floor(await db.getTotalQuoteCount(channelName));
+            let max = Math.floor(100);
             quoteId = Math.floor(Math.random() * (max - min + 1) + min);
         }
         context.info("Quote ID: " + quoteId);
+        var partitionkey = 'dateAdded'
+
+        var response = await container.item(quoteId, partitionkey).read();
+        let quoteItem = response.resource;
         
         /*
         const querySpec = {
@@ -65,7 +78,7 @@ app.http('quote', {
         const { resources } = await database.container(`xboxplaydatesus`).items.query(querySpec).fetchAll();
         */
 
-        const quoteItem = await context.extraInputs.get(cosmosInput);
+        //const quoteItem = await context.extraInputs.get(cosmosInput);
         context.info("Quote Item: " + JSON.stringify(quoteItem));
 
         if (!quoteItem) {
