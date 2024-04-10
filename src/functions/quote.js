@@ -32,6 +32,7 @@ app.http('quote', {
                 body: { error: 'internal server error' }
             };
         }
+        
 
         const quoteId = commandOptions.find(option => option.name === 'id').value;
         if (!quoteId) {
