@@ -37,13 +37,17 @@ app.http('quote', {
                 const { resources: quoteCount } = await container.items.query(querySpec).fetchAll();
                 context.info("Quote count: " + quoteCount[0])
 
-                quoteId = Math.floor(Math.random() * quoteCount[0]);
+                quoteId = await Math.floor(Math.random() * (quoteCount[0] - 1));
                 context.info("Generated quote ID: " + quoteId);
             }
 
             context.info("Reading quote from Cosmos DB...");
-            const { resource: quoteItem } = await container.item(`${quoteId}`).read();
-            context.info("Reource: " + JSON.stringify(reource));
+            const quoteQuerySpec = {
+                query: `SELECT * FROM c WHERE c.id = '${quoteId}'`
+            };
+            const { resources } = await container.items.query(quoteQuerySpec).fetchAll();
+            context.log("Resources: " + JSON.stringify(resources));
+            const quoteItem = resources[0];
             context.info("Quote Item: " + JSON.stringify(quoteItem));
 
             if (!quoteItem) {
