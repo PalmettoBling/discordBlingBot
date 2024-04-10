@@ -23,20 +23,27 @@ app.http('quote', {
 
         // Connecting to client
         try {
+            context.info("Connecting to Cosmos DB...")
             const client = new CosmosClient(process.env.CosmosDbConnectionSetting);
             const database = client.database('playdatesBot');
             const container = database.container('xboxplaydatesus');
 
+            context.info("Checking if there is an quote ID...")
             if (!quoteId) {
+                context.info("No quote ID found, generating random quote ID...");
                 const querySpec = {
                     query: "SELECT VALUE COUNT(1) FROM c"
                 };
                 const { resources: quoteCount } = await container.items.query(querySpec).fetchAll();
+                context.info("Quote count: " + quoteCount[0])
 
                 quoteId = Math.floor(Math.random() * quoteCount[0]);
+                context.info("Generated quote ID: " + quoteId);
             }
 
+            context.info("Reading quote from Cosmos DB...");
             const { resource: quoteItem } = await container.item(quoteId).read();
+            context.info("Quote Item: " + JSON.stringify(quoteItem));
 
             if (!quoteItem) {
                 context.warn("Quote not found.");
