@@ -1,9 +1,18 @@
-const { app } = require('@azure/functions');
-const CosmosClient = require('@azure/cosmos').CosmosClient;
+const { app, input } = require('@azure/functions');
+//const CosmosClient = require('@azure/cosmos').CosmosClient;
+
+const cosmosInput = input.cosmosDB({
+    databaseName: 'playdatesBot',
+    collectionName: 'xboxplaydatesus',
+    id: '{quoteId}',
+    partitionKey: '/dateAdded',
+    connectionStringSetting: 'CosmosDBConnection'
+})
 
 app.http('quote', {
     methods: ['GET', 'POST'],
     authLevel: 'anonymous',
+    extraInputs: [cosmosInput],
     handler: async (request, context) => {
         context.log(`Http function processed request for url "${request.url}"`);
 
@@ -20,6 +29,7 @@ app.http('quote', {
         context.info("Command options: " + JSON.stringify(commandOptions));
 
         // Connecting CosmosDB client to quote DB
+        /*
         try {
             context.log("Connecting to CosmosDB client...");
             const dbEndpoint = process.env.DB_ENDPOINT;
@@ -33,7 +43,7 @@ app.http('quote', {
                 status: 500,
                 body: { error: 'internal server error' }
             };
-        }
+        }*/
 
         const quoteId = commandOptions.find(option => option.name === 'id').value;
         if (!quoteId) {
@@ -43,6 +53,7 @@ app.http('quote', {
         }
         context.info("Quote ID: " + quoteId);
         
+        /*
         const querySpec = {
             query: `SELECT * FROM c WHERE c.id = '${quoteId}'`,
             parameters: [
@@ -52,7 +63,31 @@ app.http('quote', {
         context.info("Query Spec: " + JSON.stringify(querySpec));
 
         const { resources } = await database.container(`xboxplaydatesus`).items.query(querySpec).fetchAll();
-        const quoteReturn = `#${resources[0].id}: ${resources[0].quote} - ${resources[0].attribution} (${resources[0].dateOfQuote})`;
+        */
+
+        const quoteItem = await context.extraInputs.get(cosmosInput);
+        context.info("Quote Item: " + JSON.stringify(quoteItem));
+
+        if (!quoteItem) {
+            context.warn("Quote not found.");
+
+            const noSuchQuote = `Quote not found...`;
+            return {
+                body: { "type": 4,
+                        "data": {
+                            "tts": false,
+                            "content": noSuchQuote,
+                            "embeds": []
+                        } },
+                headers: { "Content-Type": "application/json",
+                            "x-Signature-Ed25519": signature,
+                            "X-Signature-Timestamp": timestamp 
+                        },
+                status: 200
+            }
+        }
+
+        const quoteReturn = `#${quoteItem.id}: ${quoteItem.quote} - ${quoteItem.attribution} (${quoteItem.dateOfQuote})`;
         context.info("Quote Return: " + quoteReturn);
 
         return {
