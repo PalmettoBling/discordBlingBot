@@ -19,10 +19,7 @@ app.http('quote', {
         context.info("Request body: " + body);
         const commandOptions = bodyObject.data.options;
         context.info("Command options: " + JSON.stringify(commandOptions));
-        const quoteId = commandOptions ? commandOptions[0].value : null;
-
-        // Get Quote ID or randomize number of total records
-
+        let quoteId = commandOptions ? commandOptions[0].value : null;
 
         // Connecting to client
         try {
