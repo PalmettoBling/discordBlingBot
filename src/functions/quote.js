@@ -8,7 +8,9 @@ app.http('quote', {
         context.log(`Http function processed request for url "${request.url}"`);
 
         // Connecting CosmosDB client to quote DB
-        const client = new CosmosClient(DB_ENDPOINT, DB_KEY);
+        context.log("Connecting to CosmosDB client...");
+        const client = new CosmosClient(process.env.DB_ENDPOINT, process.env.DB_KEY);
+        context.log("Connected to CosmosDB client");
         const database = client.database("playdatesBot");
 
         const body = await request.text();
