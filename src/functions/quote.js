@@ -24,9 +24,9 @@ app.http('quote', {
         // Connecting to client
         try {
             context.info("Connecting to Cosmos DB...")
-            const client = new CosmosClient(process.env.CosmosDbConnectionSetting);
-            const database = client.database('playdatesBot');
-            const container = database.container('xboxplaydatesus');
+            const client = await new CosmosClient(process.env.CosmosDbConnectionSetting);
+            const database = await client.database('playdatesBot');
+            const container = await database.container('xboxplaydatesus');
 
             context.info("Checking if there is an quote ID...")
             if (!quoteId) {
@@ -43,6 +43,7 @@ app.http('quote', {
 
             context.info("Reading quote from Cosmos DB...");
             const { resource: quoteItem } = await container.item(`${quoteId}`).read();
+            context.info("Reource: " + JSON.stringify(reource));
             context.info("Quote Item: " + JSON.stringify(quoteItem));
 
             if (!quoteItem) {
