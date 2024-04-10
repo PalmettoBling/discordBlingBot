@@ -1,5 +1,6 @@
 const { app } = require('@azure/functions');
 const CosmosClient = require('@azure/cosmos').CosmosClient;
+const { DefaultAzureCredential } = require('@azure/identity');
 
 app.http('quote', {
     methods: ['GET', 'POST'],
