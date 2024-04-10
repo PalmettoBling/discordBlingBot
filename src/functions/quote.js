@@ -1,5 +1,5 @@
 const { app } = require('@azure/functions');
-const CosmosClient = require('@azure/cosmos');
+const CosmosClient = require('@azure/cosmos').CosmosClient;
 
 app.http('quote', {
     methods: ['GET', 'POST'],
@@ -24,7 +24,7 @@ app.http('quote', {
             context.log("Connecting to CosmosDB client...");
             const dbEndpoint = process.env.DB_ENDPOINT;
             const dbKey = process.env.DB_KEY;
-            const client = await new CosmosClient({ dbEndpoint, dbKey });
+            const client = await new CosmosClient( dbEndpoint, dbKey );
             context.log("Connected to CosmosDB client");
             const database = await client.database("playdatesBot");
         } catch(err) {
