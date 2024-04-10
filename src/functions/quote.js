@@ -42,7 +42,7 @@ app.http('quote', {
             }
 
             context.info("Reading quote from Cosmos DB...");
-            const { resource: quoteItem } = await container.item(quoteId).read();
+            const { resource: quoteItem } = await container.item(`${quoteId}`).read();
             context.info("Quote Item: " + JSON.stringify(quoteItem));
 
             if (!quoteItem) {
