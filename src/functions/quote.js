@@ -13,13 +13,17 @@ app.http('quote', {
 
         const body = await request.text();
         const bodyObject = JSON.parse(body);
+        context.info("Request body: " + body);
         const commandOptions = bodyObject.data.options;
+        context.info("Command options: " + JSON.stringify(commandOptions));
+
         const quoteId = commandOptions.find(option => option.name === 'id').value;
         if (!quoteId) {
             let min = Math.ceil(0);
             let max = Math.floor(await db.getTotalQuoteCount(channelName));
             quoteId = Math.floor(Math.random() * (max - min + 1) + min);
         }
+        context.info("Quote ID: " + quoteId);
         
         const querySpec = {
             query: `SELECT * FROM c WHERE c.id = '${quoteId}'`,
@@ -27,9 +31,11 @@ app.http('quote', {
                 { name: '@id', value: quoteId }
             ]
         };
+        context.info("Query Spec: " + JSON.stringify(querySpec));
 
         const { resources } = await database.container(`xboxplaydatesus`).items.query(querySpec).fetchAll();
         const quoteReturn = `#${resources[0].id}: ${resources[0].quote} - ${resources[0].attribution} (${resources[0].dateOfQuote})`;
+        context.info("Quote Return: " + quoteReturn);
 
         return {
             body: { "type": 4,
