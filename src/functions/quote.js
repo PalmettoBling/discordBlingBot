@@ -21,7 +21,9 @@ app.http('quote', {
 
         // Connecting CosmosDB client to quote DB
         context.log("Connecting to CosmosDB client...");
-        const client = await new CosmosClient(process.env.DB_ENDPOINT, process.env.DB_KEY);
+        const dbEndpoint = process.env.DB_ENDPOINT;
+        const dbKey = process.env.DB_KEY;
+        const client = await new CosmosClient({ dbEndpoint, dbKey });
         context.log("Connected to CosmosDB client");
         const database = await client.database("playdatesBot");
 
