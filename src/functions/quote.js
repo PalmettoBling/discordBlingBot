@@ -20,12 +20,21 @@ app.http('quote', {
         context.info("Command options: " + JSON.stringify(commandOptions));
 
         // Connecting CosmosDB client to quote DB
-        context.log("Connecting to CosmosDB client...");
-        const dbEndpoint = process.env.DB_ENDPOINT;
-        const dbKey = process.env.DB_KEY;
-        const client = await new CosmosClient({ dbEndpoint, dbKey });
-        context.log("Connected to CosmosDB client");
-        const database = await client.database("playdatesBot");
+        try {
+            context.log("Connecting to CosmosDB client...");
+            const dbEndpoint = process.env.DB_ENDPOINT;
+            const dbKey = process.env.DB_KEY;
+            const client = await new CosmosClient({ dbEndpoint, dbKey });
+            context.log("Connected to CosmosDB client");
+            const database = await client.database("playdatesBot");
+        } catch(err) {
+            context.error("Error connecting to CosmosDB client: " + err);
+            return {
+                status: 500,
+                body: { error: 'internal server error' }
+            };
+        }
+  
 
 
         const quoteId = commandOptions.find(option => option.name === 'id').value;
