@@ -54,12 +54,15 @@ app.http('discordCommandHandler', {
             const options = {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'x-Signature-Ed25519': signature,
+                    'X-Signature-Timestamp': timestamp
                 },
                 body: JSON.stringify(bodyObject)
             };
 
             const response = fetch(commandFunctionURI, options);
+            context.info("Response from command function: " + JSON.stringify(response));
             
             return {
                 body: { "type": 5,

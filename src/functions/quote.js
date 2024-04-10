@@ -1,5 +1,5 @@
 const { app } = require('@azure/functions');
-const CosmosClient = require('@azure/cosmos').CosmosClient;
+const CosmosClient = require('@azure/cosmos');
 
 app.http('quote', {
     methods: ['GET', 'POST'],
@@ -7,17 +7,24 @@ app.http('quote', {
     handler: async (request, context) => {
         context.log(`Http function processed request for url "${request.url}"`);
 
-        // Connecting CosmosDB client to quote DB
-        context.log("Connecting to CosmosDB client...");
-        const client = new CosmosClient(process.env.DB_ENDPOINT, process.env.DB_KEY);
-        context.log("Connected to CosmosDB client");
-        const database = client.database("playdatesBot");
-
+        // Getting Headers and body from request
+        context.info('Attempting to get headers...');
+        const signature = await request.headers.get('X-Signature-Ed25519');
+        const timestamp = await request.headers.get('X-Signature-Timestamp');
+        
+        // Getting the channel name from the request
         const body = await request.text();
         const bodyObject = JSON.parse(body);
         context.info("Request body: " + body);
         const commandOptions = bodyObject.data.options;
         context.info("Command options: " + JSON.stringify(commandOptions));
+
+        // Connecting CosmosDB client to quote DB
+        context.log("Connecting to CosmosDB client...");
+        const client = await new CosmosClient(process.env.DB_ENDPOINT, process.env.DB_KEY);
+        context.log("Connected to CosmosDB client");
+        const database = await client.database("playdatesBot");
+
 
         const quoteId = commandOptions.find(option => option.name === 'id').value;
         if (!quoteId) {
