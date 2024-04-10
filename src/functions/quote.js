@@ -19,14 +19,26 @@ app.http('quote', {
         context.info("Request body: " + body);
         const commandOptions = bodyObject.data.options;
         context.info("Command options: " + JSON.stringify(commandOptions));
+        const quoteId = commandOptions ? commandOptions[0].value : null;
 
         // Get Quote ID or randomize number of total records
+
 
         // Connecting to client
         try {
             const client = new CosmosClient(process.env.CosmosDbConnectionSetting);
             const database = client.database('playdatesBot');
             const container = database.container('xboxplaydatesus');
+
+            if (!quoteId) {
+                const querySpec = {
+                    query: "SELECT VALUE COUNT(1) FROM c"
+                };
+                const { resources: quoteCount } = await container.items.query(querySpec).fetchAll();
+
+                quoteId = Math.floor(Math.random() * quoteCount[0]);
+            }
+
             const { resource: quoteItem } = await container.item(quoteId).read();
 
             if (!quoteItem) {
