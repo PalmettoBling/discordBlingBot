@@ -49,12 +49,12 @@ app.http('quote', {
             query: `SELECT * FROM c WHERE c.id = '${quoteId}'`
         };
         const { resources } = await container.items.query(quoteQuerySpec).fetchAll();
-        context.log("Resources: " + JSON.stringify(resources));
-        const quoteItem = resources[0];
+        context.log("Resources: " + JSON.stringify(resources));                                                                                                                                                                                                                                                                                                                                                                                                     
+        const quoteItem = resources[0];         
         context.info("Quote Item: " + JSON.stringify(quoteItem));
 
         // Returning error if quote doesn't exist else returning the quote
-        if (!quoteItem) {
+        if (quoteItem === null) {
             context.warn("Quote not found.");
             axios.patch(`https://discord.com/api/webhooks/${applicationId}/${interactionToken}/messages/@original`, {
                 'content': 'Quote not found.'
