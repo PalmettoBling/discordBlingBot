@@ -10,6 +10,7 @@
     "@azure/cosmos": "^4.0.0",
     "@azure/functions": "^4.0.0",
     "@azure/identity": "^4.0.1",
+    "axios": "^1.6.8",
     "tweetnacl": "^1.0.3"
   },
   "main": "src/functions/*.js"
