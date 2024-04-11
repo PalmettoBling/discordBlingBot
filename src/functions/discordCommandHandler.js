@@ -62,17 +62,41 @@ app.http('discordCommandHandler', {
             };
             fetch(commandFunctionURI, options);
             
-            return {
-                body: { "type": 5 },
-                status: 200
-                }
+            try {
+                return { jsonBody: { type: 5 }, status: 200 };
+            } catch (error) {
+                context.error("An error occurred while processing the command.");
+                context.error(error);
+                return { jsonBody: { 
+                    type: 4, 
+                    data: {
+                        "content": "An error occurred while processing the command."
+                        }}, 
+                    status: 200 };
+            }
+
         } else {
-            return {
-                body: { "type": 4,
-                        "data": {
-                            "content": "Invalid command name."
+            try {
+                context.error("Invalid command name.");
+                return { jsonBody: { 
+                    type: 4, 
+                    data: {
+                        "content": "Invalid command name. I honestly have no idea how this could happen... You should probably tell Bling..."
+                        }}, 
+                    status: 200 };
+            } catch (error) {
+                context.error("An error occurred while processing the command.");
+                context.error(error);
+                return {
+                    jsonBody: { 
+                        type: 4,
+                        data: {
+                            "tts": false,
+                            "content": "An error occurred while processing the command.",
+                            "embeds": []
                         },
-                status: 200
+                        status: 200
+                    }
                 }
             }
         }
