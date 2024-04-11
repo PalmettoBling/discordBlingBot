@@ -60,32 +60,22 @@ app.http('discordCommandHandler', {
                 },
                 body: JSON.stringify(bodyObject)
             };
-
-            const response = fetch(commandFunctionURI, options);
-            context.info("Response from command function: " + JSON.stringify(response));
+            fetch(commandFunctionURI, options);
             
             return {
-                body: { "type": 5,
-                        "data": {
-                            "tts": false,
-                            "content": "Please be patient, the bot is thikning _really_ hard...",
-                            "embeds": []
-                        },
+                body: { "type": 5 },
                 headers: { "Content-Type": "application/json",
                             "x-Signature-Ed25519": signature,
                             "X-Signature-Timestamp": timestamp 
                         },
                 status: 200
                 }
-            } 
         } else {
             return {
                 body: { "type": 4,
                         "data": {
-                            "tts": false,
-                            "content": "Unknown command. I honestly don't know how this could possibly happen.  You should probably let Bling know...",
-                            "embeds": []
-                        } },
+                            "content": "Invalid command name."
+                        },
                 headers: { "Content-Type": "application/json",
                             "x-Signature-Ed25519": signature,
                             "X-Signature-Timestamp": timestamp 

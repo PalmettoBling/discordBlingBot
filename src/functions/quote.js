@@ -41,7 +41,7 @@ app.http('quote', {
                 context.info("Generated quote ID: " + quoteId);
             }
 
-            context.info("Reading quote from Cosmos DB...");
+            context.info("Reading quote from Cosmos DB...");          
             const quoteQuerySpec = {
                 query: `SELECT * FROM c WHERE c.id = '${quoteId}'`
             };
@@ -54,36 +54,38 @@ app.http('quote', {
                 context.warn("Quote not found.");
     
                 const noSuchQuote = `Quote not found...`;
+                const commandFunctionURI = `https://discord.com/api/v10/interactions/${bodyObject.application_id}/${bodyObject.id}/messages/@original`;
+                const options = {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-Signature-Ed25519': signature,
+                        'X-Signature-Timestamp': timestamp
+                    },
+                    body: noSuchQuote
+                };
+                fetch(commandFunctionURI, options);
                 return {
-                    body: { "type": 4,
-                            "data": {
-                                "tts": false,
-                                "content": noSuchQuote,
-                                "embeds": []
-                            } },
-                    headers: { "Content-Type": "application/json",
-                                "x-Signature-Ed25519": signature,
-                                "X-Signature-Timestamp": timestamp 
-                            },
                     status: 200
-                }
+                };
             } else {
                 const quoteReturn = `#${quoteItem.id}: ${quoteItem.quote} - ${quoteItem.attribution} (${quoteItem.dateOfQuote})`;
                 context.info("Quote Return: " + quoteReturn);
 
+                const commandFunctionURI = `https://discord.com/api/v10/interactions/${bodyObject.application_id}/${bodyObject.id}/messages/@original`;
+                const options = {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-Signature-Ed25519': signature,
+                        'X-Signature-Timestamp': timestamp
+                    },
+                    body: quoteReturn
+                };
+                fetch(commandFunctionURI, options);
                 return {
-                    body: { "type": 4,
-                            "data": {
-                                "tts": false,
-                                "content": quoteReturn,
-                                "embeds": []
-                            } },
-                    headers: { "Content-Type": "application/json",
-                                "x-Signature-Ed25519": signature,
-                                "X-Signature-Timestamp": timestamp 
-                            },
                     status: 200
-                }
+                };
             }
         } catch (error) {
             context.error("Error: " + error);
