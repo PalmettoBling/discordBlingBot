@@ -81,6 +81,7 @@ app.http('discordCommandHandler', {
                             "X-Signature-Timestamp": timestamp 
                         },
                 status: 200
+                }
             }
         }
     }
