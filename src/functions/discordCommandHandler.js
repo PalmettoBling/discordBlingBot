@@ -64,10 +64,6 @@ app.http('discordCommandHandler', {
             
             return {
                 body: { "type": 5 },
-                headers: { "Content-Type": "application/json",
-                            "x-Signature-Ed25519": signature,
-                            "X-Signature-Timestamp": timestamp 
-                        },
                 status: 200
                 }
         } else {
@@ -75,10 +71,6 @@ app.http('discordCommandHandler', {
                 body: { "type": 4,
                         "data": {
                             "content": "Invalid command name."
-                        },
-                headers: { "Content-Type": "application/json",
-                            "x-Signature-Ed25519": signature,
-                            "X-Signature-Timestamp": timestamp 
                         },
                 status: 200
                 }
