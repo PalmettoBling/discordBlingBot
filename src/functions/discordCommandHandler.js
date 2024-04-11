@@ -60,26 +60,10 @@ app.http('discordCommandHandler', {
                 },
                 body: JSON.stringify(bodyObject)
             };
-            const commandAnswer = await fetch(commandFunctionURI, options);
+            const commandAnswer = fetch(commandFunctionURI, options);
             
             try {
-                if (commandAnswer.status != 200) {
-                    context.error("An error occurred while processing the command.");
-                    context.error(commandAnswer);
-                    return {
-                        jsonBody: { 
-                            type: 4,
-                            data: {
-                                "tts": false,
-                                "content": "An error occurred while processing the command.",
-                                "embeds": []
-                            },
-                            status: 200
-                        }
-                    }
-                } else {
-                    return { jsonBody: { type: 5 }, status: 200 };
-                }
+                return { jsonBody: { type: 5 }, status: 200 };
             } catch (error) {
                 context.error("An error occurred while processing the command.");
                 context.error(error);
