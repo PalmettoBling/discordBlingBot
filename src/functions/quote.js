@@ -31,7 +31,7 @@ app.http('quote', {
         context.info("App ID: " + applicationId + " and Interaction ID: " + interactionToken);
 
         // Getting random number for quote if no options are provided
-        if ((!quoteId) && (quoteId !== "0")) {
+        if ((!quoteId) || (quoteId !== "0")) {
             context.info("No quote ID found, generating random quote ID...");
             const querySpec = {
                 query: "SELECT VALUE COUNT(1) FROM c"
