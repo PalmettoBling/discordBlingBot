@@ -71,7 +71,7 @@ app.http('quote', {
             // Sending quote to Discord
             try {
                 context.info("Sending quote to Discord...");
-                await axios.patch(`https://discord.com/api/webhooks/${applicationId}/${interactionToken}/messages/@original`, {
+                axios.patch(`https://discord.com/api/webhooks/${applicationId}/${interactionToken}/messages/@original`, {
                     'content': quoteReturn
                 },
                 {
