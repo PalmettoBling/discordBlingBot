@@ -60,7 +60,7 @@ app.http('discordCommandHandler', {
                 },
                 body: JSON.stringify(bodyObject)
             };
-            const commandAnswer = fetch(commandFunctionURI, options);
+            const commandAnswer = await fetch(commandFunctionURI, options);
             
             try {
                 if (commandAnswer.status != 200) {
