@@ -13,7 +13,7 @@ app.http('quote', {
         const timestamp = await request.headers.get('X-Signature-Timestamp');
         context.info("Timestamp: " + timestamp);
         
-        // Getting the channel name from the request
+        // Getting the request body and options
         const body = await request.text();
         const bodyObject = JSON.parse(body);
         context.info("Request body: " + body);
@@ -21,13 +21,15 @@ app.http('quote', {
         context.info("Command options: " + JSON.stringify(commandOptions));
         let quoteId = commandOptions ? commandOptions[0].value : null;
 
-        // Connecting to client
+        
         try {
+            // Connecting to client
             context.info("Connecting to Cosmos DB...")
             const client = await new CosmosClient(process.env.CosmosDbConnectionSetting);
             const database = await client.database('playdatesBot');
             const container = await database.container('xboxplaydatesus');
 
+            // Getting random number for quote if no options are provided
             context.info("Checking if there is an quote ID...")
             if (!quoteId) {
                 context.info("No quote ID found, generating random quote ID...");
@@ -41,6 +43,7 @@ app.http('quote', {
                 context.info("Generated quote ID: " + quoteId);
             }
 
+            // Getting quote from DB
             context.info("Reading quote from Cosmos DB...");          
             const quoteQuerySpec = {
                 query: `SELECT * FROM c WHERE c.id = '${quoteId}'`
@@ -50,39 +53,65 @@ app.http('quote', {
             const quoteItem = resources[0];
             context.info("Quote Item: " + JSON.stringify(quoteItem));
 
+            // Returning error if quote doesn't exist else returning the quote
             if (!quoteItem) {
                 context.warn("Quote not found.");
     
-                const noSuchQuote = `Quote not found...`;
+                const noSuchQuote = { 
+                    "type": 4,
+                    "data": {
+                    "content": "No quote found with that ID."
+                    }
+                };
                 const commandFunctionURI = `https://discord.com/api/v10/interactions/${bodyObject.application_id}/${bodyObject.id}/messages/@original`;
                 const options = {
                     method: 'PATCH',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'x-Signature-Ed25519': signature,
-                        'X-Signature-Timestamp': timestamp
+                        "Content-Type": "application/json",
                     },
-                    body: noSuchQuote
+                    body: JSON.stringify(noSuchQuote)
                 };
                 fetch(commandFunctionURI, options);
                 return {
                     status: 200
                 };
             } else {
-                const quoteReturn = `#${quoteItem.id}: ${quoteItem.quote} - ${quoteItem.attribution} (${quoteItem.dateOfQuote})`;
-                context.info("Quote Return: " + quoteReturn);
+                //formatting the quote to be returned
+                const quoteReturn = { 
+                    "type": 4,
+                    "data": {
+                        "content": `#${quoteItem.id}: ${quoteItem.quote} - ${quoteItem.attribution} (${quoteItem.dateOfQuote})`
+                    }
+                };
+                
+                context.info("Quote Return: " + JSON.stringify(quoteReturn));
 
+                // Sending quote to Discord
                 const commandFunctionURI = `https://discord.com/api/v10/interactions/${bodyObject.application_id}/${bodyObject.id}/messages/@original`;
                 const options = {
                     method: 'PATCH',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'x-Signature-Ed25519': signature,
-                        'X-Signature-Timestamp': timestamp
+                        'Content-Type': 'application/json'
                     },
-                    body: quoteReturn
+                    body: JSON.stringify(quoteReturn)                
                 };
-                fetch(commandFunctionURI, options);
+
+                try {
+                    context.info("Sending quote to Discord...");
+                    context.info("Command Function URI: " + commandFunctionURI);
+                    context.info("Options: " + JSON.stringify(options));
+                    fetch(commandFunctionURI, options);
+                } catch (error) {
+                    context.error("An error occurred while sending the quote.");
+                    context.error(error);
+                    return { jsonBody: { 
+                        type: 4, 
+                        data: {
+                            "content": "An error occurred while sending the quote."
+                            }}, 
+                        status: 200 };
+                }
+                
                 return {
                     status: 200
                 };
