@@ -85,7 +85,7 @@ app.http('gameplan', {
         try {
             // Getting Twitch Access Token
             context.info("Getting Twitch Access Token...");
-            const tokenResponse = await axios.post(`https://id.twitch.tv/oauth2/token?client_id=${process.env.TwitchClientId}&client_secret=${process.env.TwitchClientSecret}&grant_type=refresh_token&refresh_token=${twitchInfo.refresh_token}`);
+            const tokenResponse = await axios.post(`https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&grant_type=refresh_token&refresh_token=${twitchInfo.refresh_token}`);
             context.info("Twitch Response: " + JSON.stringify(tokenResponse.data));
         } catch (error) {
             context.error("An error occurred while getting the Twitch Access Token.");
