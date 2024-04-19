@@ -42,6 +42,7 @@ app.http('gameplan', {
         const commandOptions = bodyObject.data.options;
         let twitchLogin;
 
+        context.info("Component Response: " + JSON.stringify(componentResponse.data));
         // Connecting to DB client
         context.info("Connecting to Cosmos DB...")
         const client = await new CosmosClient(process.env.CosmosDbConnectionSetting);
@@ -94,9 +95,17 @@ app.http('gameplan', {
         // assigning value to categoryId if found
         if (!gameResponse.status === 200 || !gameResponse.data) {
             context.warn("Game not found.");
-            return { status: 200, body: { error: 'Game not found. Check the spelling?' }};
+            axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
+                {
+                    'content': `Game not found. Please check spelling.`
+                },
+                {
+                    'Content-Type': 'application/json'
+                });
+            return { status: 200 };
         }
         const categoryId = gameResponse.data.data[0].id;
+        context.info("Category ID: " + categoryId);
 
         // Get Schedule for Channel
 
