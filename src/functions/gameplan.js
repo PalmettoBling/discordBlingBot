@@ -48,7 +48,7 @@ app.http('gameplan', {
         const database = await client.database('playdatesBot');
         const container = await database.container('twitchAuthorization');
 
-        switch (commandOptions.guild_id) {
+        switch (bodyObject.guild_id) {
             case '828634187175034900':
                 twitchLogin = "palmettobling"
                 break;
@@ -69,6 +69,7 @@ app.http('gameplan', {
                 twitchLogin = "xboxambassadors"
                 break;
         }
+        context.info("Twitch Login: " + twitchLogin);
 
         // Getting token and twitch user ID from Cosmos DB
         context.info("Reading Twitch Authorization from Cosmos DB...");
