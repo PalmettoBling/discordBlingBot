@@ -40,6 +40,7 @@ app.http('gameplan', {
         const bodyObject = JSON.parse(body);
         context.info("Request body: " + body);
         const commandOptions = bodyObject.data.options;
+        context.info("Command Options: " + JSON.stringify(commandOptions));
         let twitchLogin;
 
         // Connecting to DB client
@@ -82,14 +83,21 @@ app.http('gameplan', {
         context.info("Twitch Info: " + JSON.stringify(twitchInfo));
         
         // Searching for Category ID from game
-        context.info("Searching for Category ID from game...");
-        const gameName = commandOptions.game;
-        const gameResponse = await axios.get(`https://api.twitch.tv/helix/search/categories?query=${gameName}&first=4`, 
-            {},
-            { params: {
-                gameName
-            }});
-        context.info("Game Response: " + JSON.stringify(gameResponse.data));
+        try {
+            context.info("Searching for Category ID from game...");
+            const gameName = commandOptions[1].value;
+            const gameResponse = await axios.get(`https://api.twitch.tv/helix/search/categories?`, {
+                query: gameName
+            }, {
+                headers: {
+                    'content-Type': 'application/x-www-form-urlencoded'
+                }
+            });
+            context.info("Game Response: " + JSON.stringify(gameResponse.data));
+        } catch (error) {
+            context.error("An error occurred while searching for the game.");
+            context.error(error);
+        }
         
         // Returning error if no category ID found 
         // assigning value to categoryId if found
