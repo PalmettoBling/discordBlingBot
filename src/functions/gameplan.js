@@ -93,14 +93,14 @@ app.http('gameplan', {
             const tokenResponse = await axios.post(`https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&grant_type=refresh_token&refresh_token=${twitchInfo.refresh_token}`);
             context.info("token Response: " + JSON.stringify(tokenResponse.data));
             tokenInfo = tokenResponse.data;
-            const { resource: updatedItem } = await container.items.upsert(tokenInfo);
-            context.info("Updated Item: " + JSON.stringify(updatedItem));
+            const { resource } = container.items.upsert(tokenInfo);
+            context.info("Updated Item: " + JSON.stringify(resource));
         } catch (error) {
             context.error("An error occurred while getting the Twitch Access Token.");
             context.error(error);
             return { status: 500 };
         }
-        context.info("Access Token: " + tokenResponse.data.access_token);
+        context.info("Access Token: " + tokenInfo.access_token);
         
         // Searching for Category ID from game
         try {
