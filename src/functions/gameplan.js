@@ -42,7 +42,6 @@ app.http('gameplan', {
         const commandOptions = bodyObject.data.options;
         let twitchLogin;
 
-        context.info("Component Response: " + JSON.stringify(componentResponse.data));
         // Connecting to DB client
         context.info("Connecting to Cosmos DB...")
         const client = await new CosmosClient(process.env.CosmosDbConnectionSetting);
