@@ -90,10 +90,10 @@ app.http('gameplan', {
         try {
             // Getting Twitch Access Token
             context.info("Getting Twitch Access Token...");
-            const tokenResponse = await axios.post(`https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&grant_type=refresh_token&refresh_token=${twitchInfo.refresh_token}`);
+            var tokenResponse = await axios.post(`https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&grant_type=refresh_token&refresh_token=${twitchInfo.refresh_token}`);
             context.info("token Response: " + JSON.stringify(tokenResponse.data));
             tokenInfo = tokenResponse.data;
-            const { resource } = container.items.upsert(tokenInfo);
+            var { resource } = container.items.upsert(tokenInfo);
             context.info("Updated Item: " + JSON.stringify(resource));
         } catch (error) {
             context.error("An error occurred while getting the Twitch Access Token.");
@@ -105,12 +105,13 @@ app.http('gameplan', {
         // Searching for Category ID from game
         try {
             context.info("Searching for Category ID from game...");
-            const gameName = commandOptions[1].value;
+            var gameName = commandOptions[1].value;
             qs = new URLSearchParams({
-                query: gameName
+                query: gameName,
+                first: 4
             });
 
-            const gameResponse = await axios.get(`https://api.twitch.tv/helix/search/categories?${qs}`,
+            var gameResponse = await axios.get(`https://api.twitch.tv/helix/search/categories?${qs}`,
             {
                 headers: {
                     'Authorization': `Bearer ${tokenInfo.access_token}`,
@@ -119,6 +120,52 @@ app.http('gameplan', {
                 }
             });
             context.info("Game Response: " + JSON.stringify(gameResponse.data));
+
+            // Updating discord message to ask for menu selection of games
+            qs = new URLSearchParams({
+                wait: true
+            });
+            var discordGameMenuSelection = await axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
+                {
+                    'content': `Please select the game from the list below:`,
+                    'components': [{
+                        'type': 1,
+                        'components': [{
+                            'type': 3,
+                            'custom_id': 'gameSelection',
+                            'options': [
+                                {
+                                    'label': gameResponse.data.data[0].name,
+                                    'value': gameResponse.data.data[0].id
+                                },
+                                {
+                                    'label': gameResponse.data.data[1].name,
+                                    'value': gameResponse.data.data[1].id
+                                },
+                                {
+                                    'label': gameResponse.data.data[2].name,
+                                    'value': gameResponse.data.data[2].id
+                                },
+                                {
+                                    'label': gameResponse.data.data[3].name,
+                                    'value': gameResponse.data.data[3].id
+                                }
+                            ]
+                        }]
+                    }],
+                },
+                {
+                    'Content-Type': 'application/json'
+                });
+            context.info("Discord Game Menu Selection: " + JSON.stringify(discordGameMenuSelection.data));
+            
+            // Might need to end function here, and start a new function handling interaction response - checking data for "type" (3 , instead of 1)
+
+
+            //var followUpResponse = await axios.get(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/${discordGameMenuSelection.data.id}`);
+            //context.info("Follow Up Response: " + JSON.stringify(followUpResponse.data));
+            var categoryId = discordGameMenuSelection.data.data.values[0];
+            context.info("Category ID: " + categoryId);
         } catch (error) {
             context.error("An error occurred while searching for the game.");
             context.error(error);
@@ -126,7 +173,7 @@ app.http('gameplan', {
         
         // Returning error if no category ID found 
         // assigning value to categoryId if found
-        if (!gameResponse.status === 200 || !gameResponse.data) {
+        if (!categoryId) {
             context.warn("Game not found.");
             axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
                 {
@@ -137,15 +184,13 @@ app.http('gameplan', {
                 });
             return { status: 200 };
         }
-        const categoryId = gameResponse.data.data[0].id;
-        context.info("Category ID: " + categoryId);
 
         // Get Schedule for Channel
         try {
             qs = new URLSearchParams({
                 broadcaster_id: twitchInfo.twitchUserId
             });
-            const scheduleResponse = await axios.get(`https://api.twitch.tv/helix/schedule?${qs}`, {
+            var scheduleResponse = await axios.get(`https://api.twitch.tv/helix/schedule?${qs}`, {
                 headers: {
                     'Authorization': `Bearer ${tokenInfo.access_token}`,
                     'Client-Id': process.env.TWITCH_CLIENT_ID,
@@ -228,7 +273,5 @@ app.http('gameplan', {
                 });
             return { status: 200 };
         }
-
-        return {  };
     }
 });
