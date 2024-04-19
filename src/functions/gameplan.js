@@ -81,6 +81,17 @@ app.http('gameplan', {
         context.log("Resources: " + JSON.stringify(resources));
         const twitchInfo = resources[0];
         context.info("Twitch Info: " + JSON.stringify(twitchInfo));
+
+        try {
+            // Getting Twitch Access Token
+            context.info("Getting Twitch Access Token...");
+            const tokenResponse = await axios.post(`https://id.twitch.tv/oauth2/token?client_id=${process.env.TwitchClientId}&client_secret=${process.env.TwitchClientSecret}&grant_type=refresh_token&refresh_token=${twitchInfo.refresh_token}`);
+            context.info("Twitch Response: " + JSON.stringify(tokenResponse.data));
+        } catch (error) {
+            context.error("An error occurred while getting the Twitch Access Token.");
+            context.error(error);
+            return { status: 500 };
+        }
         
         // Searching for Category ID from game
         try {
@@ -90,7 +101,9 @@ app.http('gameplan', {
                 query: gameName
             }, {
                 headers: {
-                    'content-Type': 'application/x-www-form-urlencoded'
+                    'Authorization': `Bearer ${tokenResponse.data.access_token}`,
+                    'Client-Id': process.env.TwitchClientId,
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 }
             });
             context.info("Game Response: " + JSON.stringify(gameResponse.data));
