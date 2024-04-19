@@ -42,7 +42,7 @@ app.http('discordCommandHandler', {
         if (bodyObject.type == 1) {
             context.info("Request is a PING, returning PONG");
             return { jsonBody: { type: 1 }, status: 200 };
-        }
+        } //else if (bodyObject.type == 3) {}
 
         // Validation of message is complete and the request is not a PING, so sending the payload to the appropriate function based
         // on the command name and sending the options along with it.
