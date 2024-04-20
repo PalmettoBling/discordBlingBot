@@ -61,7 +61,7 @@ app.http('discordCommandHandler', {
             const commandAnswer = fetch(commandFunctionURI, options);
             
             try {
-                //return { jsonBody: { type: 5 }, status: 200 };
+                return { jsonBody: { type: 5 }, status: 200 };
             } catch (error) {
                 context.error("An error occurred while processing the command.");
                 context.error(error);

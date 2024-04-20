@@ -40,7 +40,8 @@ app.http('gameplan', {
         const bodyObject = JSON.parse(body);
         context.info("Request body: " + body);
         const commandOptions = bodyObject.data.options;
-        let twitchLogin;
+        context.info("Command Options: " + JSON.stringify(commandOptions));
+        var twitchLogin;
         let tokenInfo;
         let segmentId;
         let segmentTitle;
@@ -82,27 +83,31 @@ app.http('gameplan', {
             query: `SELECT c.twitchUserId, c.refresh_token, c.id FROM c WHERE c.login = '${twitchLogin}'`
         };
         const { resources } = await container.items.query(twitchQuerySpec).fetchAll();
+        context.log("Resources: " + JSON.stringify(resources));
         const twitchInfo = resources[0];
+        context.info("Twitch Info: " + JSON.stringify(twitchInfo));
 
         try {
             // Getting Twitch Access Token
             context.info("Getting Twitch Access Token...");
             var tokenResponse = await axios.post(`https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&grant_type=refresh_token&refresh_token=${twitchInfo.refresh_token}`);
+            context.info("token Response: " + JSON.stringify(tokenResponse.data));
             tokenInfo = tokenResponse.data;
-            container.items.upsert(tokenInfo);
+            var { resource } = container.items.upsert(tokenInfo);
+            context.info("Updated Item: " + JSON.stringify(resource));
         } catch (error) {
             context.error("An error occurred while getting the Twitch Access Token.");
             context.error(error);
             return { status: 500 };
         }
+        context.info("Access Token: " + tokenInfo.access_token);
         
         // Searching for Category ID from game
         try {
             context.info("Searching for Category ID from game...");
             var gameName = commandOptions[1].value;
             qs = new URLSearchParams({
-                query: gameName,
-                first: 4
+                query: gameName
             });
 
             var gameResponse = await axios.get(`https://api.twitch.tv/helix/search/categories?${qs}`,
@@ -114,13 +119,13 @@ app.http('gameplan', {
                 }
             });
             context.info("Game Response: " + JSON.stringify(gameResponse.data));
+        } catch (error) {
+            context.error("An error occurred while searching for the game.");
+            context.error(error);
+        }
 
-            // Updating discord message to ask for menu selection of games
-            qs = new URLSearchParams({
-                wait: true
-            });
-            
-            var discordGameMenuSelection = await axios.post(`https://discord.com/api/v10/interactions/${bodyObject.id}/${bodyObject.token}/callback`, {
+        try {
+            var discordGameMenuSelection = await axios.post(`https://discord.com/api/v10/interactions/${bodyObject.id}/${bodyObject.token}/messages/@original`, {
                 "type": 4, 
                 "data": {
                     'content': `Please select the game from the list below:`,
@@ -145,62 +150,47 @@ app.http('gameplan', {
                                 {
                                     'label': gameResponse.data.data[3].name,
                                     'value': gameResponse.data.data[3].id
+                                },
+                                {
+                                    'label': "None of these...",
+                                    "value": "none"
                                 }
                             ]
                         }]
                     }]
                 }
             });
-            /*
-            var discordGameMenuSelection = await axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
+            context.info("Discord Game Menu Selection: " + JSON.stringify(discordGameMenuSelection.data));
+        } catch (error) {
+            context.error("An error occurred while sending the game selection menu.");
+            context.error(error); 
+            axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
                 {
-                    'content': `Please select the game from the list below:`,
-                    'components': [{
-                        'type': 1,
-                        'components': [{
-                            'type': 3,
-                            'custom_id': 'gameSelection',
-                            'options': [
-                                {
-                                    'label': gameResponse.data.data[0].name,
-                                    'value': gameResponse.data.data[0].id
-                                },
-                                {
-                                    'label': gameResponse.data.data[1].name,
-                                    'value': gameResponse.data.data[1].id
-                                },
-                                {
-                                    'label': gameResponse.data.data[2].name,
-                                    'value': gameResponse.data.data[2].id
-                                },
-                                {
-                                    'label': gameResponse.data.data[3].name,
-                                    'value': gameResponse.data.data[3].id
-                                }
-                            ]
-                        }]
-                    }]
+                    'content': `Error sending or getting menu selection items.`
                 },
                 {
                     'Content-Type': 'application/json'
                 });
-            context.info("Discord Game Menu Selection: " + JSON.stringify(discordGameMenuSelection.data));
-            */
-            // Might need to end function here, and start a new function handling interaction response - checking data for "type" (3 , instead of 1)
-
-
-            //var followUpResponse = await axios.get(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/${discordGameMenuSelection.data.id}`);
-            //context.info("Follow Up Response: " + JSON.stringify(followUpResponse.data));
-            var categoryId = discordGameMenuSelection.data.data.values[0];
-            context.info("Category ID: " + categoryId);
-        } catch (error) {
-            context.error("An error occurred while searching for the game.");
-            context.error(error);
+            return { status: 200 };
         }
         
+        if (discordGameMenuSelection.data.data.values[0] === "none") {
+            axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
+            {
+                'content': `If the game was not in the selection list, please review the initial spelling.`
+            },
+            {
+                'Content-Type': 'application/json'
+            });
+            return { status: 200 };
+        } else {
+            var categoryId = discordGameMenuSelection.data.data.values[0];
+        }
+        
+        /*
         // Returning error if no category ID found 
         // assigning value to categoryId if found
-        if (!categoryId) {
+        if (!gameResponse.status === 200 || !gameResponse.data) {
             context.warn("Game not found.");
             axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
                 {
@@ -211,6 +201,9 @@ app.http('gameplan', {
                 });
             return { status: 200 };
         }
+        const categoryId = gameResponse.data.data[0].id;
+        context.info("Category ID: " + categoryId);
+        */
 
         // Get Schedule for Channel
         try {
@@ -270,7 +263,7 @@ app.http('gameplan', {
         // Update discord on status of schedule update
         if (scheduleSegmentUpdate.status === 204) {
             context.info("Schedule segment updated successfully.");
-            let options = {
+            var options = {
                 weekday: 'long',
                 day: 'numeric',
                 month: 'long',
@@ -279,7 +272,7 @@ app.http('gameplan', {
                 timeZone: 'America/Los_Angeles',
                 timeZoneName: 'short'
             };
-            const gameStartText = new Intl.DateTimeFormat('en', options).format(new Date(segmentStartTime));
+            var gameStartText = new Intl.DateTimeFormat('en', options).format(new Date(segmentStartTime));
 
             axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
                 {
