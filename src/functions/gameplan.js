@@ -127,32 +127,35 @@ app.http('gameplan', {
             });
             var discordGameMenuSelection = await axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
                 {
-                    'content': `Please select the game from the list below:`,
-                    'components': [{
-                        'type': 1,
+                    'type': 4,
+                    'data': {
+                        'content': `Please select the game from the list below:`,
                         'components': [{
-                            'type': 3,
-                            'custom_id': 'gameSelection',
-                            'options': [
-                                {
-                                    'label': gameResponse.data.data[0].name,
-                                    'value': gameResponse.data.data[0].id
-                                },
-                                {
-                                    'label': gameResponse.data.data[1].name,
-                                    'value': gameResponse.data.data[1].id
-                                },
-                                {
-                                    'label': gameResponse.data.data[2].name,
-                                    'value': gameResponse.data.data[2].id
-                                },
-                                {
-                                    'label': gameResponse.data.data[3].name,
-                                    'value': gameResponse.data.data[3].id
-                                }
-                            ]
+                            'type': 1,
+                            'components': [{
+                                'type': 3,
+                                'custom_id': 'gameSelection',
+                                'options': [
+                                    {
+                                        'label': gameResponse.data.data[0].name,
+                                        'value': gameResponse.data.data[0].id
+                                    },
+                                    {
+                                        'label': gameResponse.data.data[1].name,
+                                        'value': gameResponse.data.data[1].id
+                                    },
+                                    {
+                                        'label': gameResponse.data.data[2].name,
+                                        'value': gameResponse.data.data[2].id
+                                    },
+                                    {
+                                        'label': gameResponse.data.data[3].name,
+                                        'value': gameResponse.data.data[3].id
+                                    }
+                                ]
+                            }]
                         }]
-                    }],
+                    },
                 },
                 {
                     'Content-Type': 'application/json'
