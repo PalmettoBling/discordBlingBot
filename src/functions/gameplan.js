@@ -40,7 +40,6 @@ app.http('gameplan', {
         const bodyObject = JSON.parse(body);
         context.info("Request body: " + body);
         const commandOptions = bodyObject.data.options;
-        context.info("Command Options: " + JSON.stringify(commandOptions));
         let twitchLogin;
         let tokenInfo;
         let segmentId;
@@ -83,24 +82,19 @@ app.http('gameplan', {
             query: `SELECT c.twitchUserId, c.refresh_token, c.id FROM c WHERE c.login = '${twitchLogin}'`
         };
         const { resources } = await container.items.query(twitchQuerySpec).fetchAll();
-        context.log("Resources: " + JSON.stringify(resources));
         const twitchInfo = resources[0];
-        context.info("Twitch Info: " + JSON.stringify(twitchInfo));
 
         try {
             // Getting Twitch Access Token
             context.info("Getting Twitch Access Token...");
             var tokenResponse = await axios.post(`https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&grant_type=refresh_token&refresh_token=${twitchInfo.refresh_token}`);
-            context.info("token Response: " + JSON.stringify(tokenResponse.data));
             tokenInfo = tokenResponse.data;
-            var { resource } = container.items.upsert(tokenInfo);
-            context.info("Updated Item: " + JSON.stringify(resource));
+            container.items.upsert(tokenInfo);
         } catch (error) {
             context.error("An error occurred while getting the Twitch Access Token.");
             context.error(error);
             return { status: 500 };
         }
-        context.info("Access Token: " + tokenInfo.access_token);
         
         // Searching for Category ID from game
         try {
@@ -125,43 +119,73 @@ app.http('gameplan', {
             qs = new URLSearchParams({
                 wait: true
             });
+            
+            var discordGameMenuSelection = await axios.post(`https://discord.com/api/v10/interactions/${bodyObject.id}/${bodyObject.token}/callback`, {
+                "type": 4, 
+                "data": {
+                    'content': `Please select the game from the list below:`,
+                    'components': [{
+                        'type': 1,
+                        'components': [{
+                            'type': 3,
+                            'custom_id': 'gameSelection',
+                            'options': [
+                                {
+                                    'label': gameResponse.data.data[0].name,
+                                    'value': gameResponse.data.data[0].id
+                                },
+                                {
+                                    'label': gameResponse.data.data[1].name,
+                                    'value': gameResponse.data.data[1].id
+                                },
+                                {
+                                    'label': gameResponse.data.data[2].name,
+                                    'value': gameResponse.data.data[2].id
+                                },
+                                {
+                                    'label': gameResponse.data.data[3].name,
+                                    'value': gameResponse.data.data[3].id
+                                }
+                            ]
+                        }]
+                    }]
+                }
+            });
+            /*
             var discordGameMenuSelection = await axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
                 {
-                    'type': 4,
-                    'data': {
-                        'content': `Please select the game from the list below:`,
+                    'content': `Please select the game from the list below:`,
+                    'components': [{
+                        'type': 1,
                         'components': [{
-                            'type': 1,
-                            'components': [{
-                                'type': 3,
-                                'custom_id': 'gameSelection',
-                                'options': [
-                                    {
-                                        'label': gameResponse.data.data[0].name,
-                                        'value': gameResponse.data.data[0].id
-                                    },
-                                    {
-                                        'label': gameResponse.data.data[1].name,
-                                        'value': gameResponse.data.data[1].id
-                                    },
-                                    {
-                                        'label': gameResponse.data.data[2].name,
-                                        'value': gameResponse.data.data[2].id
-                                    },
-                                    {
-                                        'label': gameResponse.data.data[3].name,
-                                        'value': gameResponse.data.data[3].id
-                                    }
-                                ]
-                            }]
+                            'type': 3,
+                            'custom_id': 'gameSelection',
+                            'options': [
+                                {
+                                    'label': gameResponse.data.data[0].name,
+                                    'value': gameResponse.data.data[0].id
+                                },
+                                {
+                                    'label': gameResponse.data.data[1].name,
+                                    'value': gameResponse.data.data[1].id
+                                },
+                                {
+                                    'label': gameResponse.data.data[2].name,
+                                    'value': gameResponse.data.data[2].id
+                                },
+                                {
+                                    'label': gameResponse.data.data[3].name,
+                                    'value': gameResponse.data.data[3].id
+                                }
+                            ]
                         }]
-                    },
+                    }]
                 },
                 {
                     'Content-Type': 'application/json'
                 });
             context.info("Discord Game Menu Selection: " + JSON.stringify(discordGameMenuSelection.data));
-            
+            */
             // Might need to end function here, and start a new function handling interaction response - checking data for "type" (3 , instead of 1)
 
 

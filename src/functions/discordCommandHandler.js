@@ -27,7 +27,6 @@ app.http('discordCommandHandler', {
             Buffer.from(signature, "hex"),
             Buffer.from(PUBLIC_KEY, "hex")
         );
-        context.info(`Request verification: ${isVerified}`);
 
         // If request is not verified, return 401
         if (!isVerified) {
@@ -46,7 +45,6 @@ app.http('discordCommandHandler', {
 
         // Validation of message is complete and the request is not a PING, so sending the payload to the appropriate function based
         // on the command name and sending the options along with it.
-        context.info("Sending command to function " + bodyObject.data.name + " with request body of " + JSON.stringify(bodyObject));
         
         // Check if the 'name' property exists in the 'data' object of 'bodyObject'
         if (bodyObject.data.name) {
@@ -63,7 +61,7 @@ app.http('discordCommandHandler', {
             const commandAnswer = fetch(commandFunctionURI, options);
             
             try {
-                return { jsonBody: { type: 5 }, status: 200 };
+                //return { jsonBody: { type: 5 }, status: 200 };
             } catch (error) {
                 context.error("An error occurred while processing the command.");
                 context.error(error);
