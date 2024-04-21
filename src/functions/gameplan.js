@@ -23,7 +23,7 @@ app.http('gameplan', {
             grant_type: 'client_credentials'
         }, {
             headers: {
-                'Content-Type': 'application/x-www.form-urlencoded'
+                'Content-Type': 'application/x-www-form-urlencoded'
             }
         });
         context.info("App Token Request Status: " + JSON.stringify(appToken.status));
