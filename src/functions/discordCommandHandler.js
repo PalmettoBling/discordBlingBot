@@ -38,10 +38,28 @@ app.http('discordCommandHandler', {
         }
 
         // If request is a PING type message, return PONG (ACK type 1)
+        
         if (bodyObject.type == 1) {
             context.info("Request is a PING, returning PONG");
             return { jsonBody: { type: 1 }, status: 200 };
-        } //else if (bodyObject.type == 3) {}
+        } 
+        
+        // If request is a COMPONENT response, return ACK (ACK type 6)
+        if (bodyObject.type == 3) {
+            context.info(`Component Message response received from ${bodyObject.meessage.interaction.name}, returning ACK`);
+            const commandFunctionURI = 'https://discordblingbot.azurewebsites.net/api/' + bodyObject.meessage.interaction.name + 'processing';
+            const options = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-Signature-Ed25519': signature,
+                    'X-Signature-Timestamp': timestamp
+                },
+                body: JSON.stringify(bodyObject)
+            };
+            const commandAnswer = fetch(commandFunctionURI, options);
+            return { jsonBody: { type: 6 }, status: 200 };
+        }
 
         // Validation of message is complete and the request is not a PING, so sending the payload to the appropriate function based
         // on the command name and sending the options along with it.
