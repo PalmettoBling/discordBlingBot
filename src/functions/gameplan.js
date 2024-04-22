@@ -60,7 +60,7 @@ app.http('gameplan', {
                         'components': [
                             {
                                 'type': 3,
-                                'custom_id': `${commandOptions[0].name}`,
+                                'custom_id': `${commandOptions[0].value}`,
                                 'options': [
                                     {
                                         'label': gameResponse.data.data[0].name,

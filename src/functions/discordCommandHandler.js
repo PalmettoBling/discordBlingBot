@@ -1,7 +1,5 @@
 const { app } = require('@azure/functions');
 const nacl = require('tweetnacl');
-//const http = require('http');
-//const { url } = require('inspector');
 
 app.http('discordCommandHandler', {
     methods: ['GET', 'POST'],
@@ -19,18 +17,6 @@ app.http('discordCommandHandler', {
         const body = await request.text();
         const bodyObject = JSON.parse(body);
         context.info("Request body: " + body);
-
-        // If request is a COMPONENT response, return ACK (ACK type 6)
-        if (bodyObject.type == 3) {
-            context.info(`Component Message response received from ${bodyObject.meessage.interaction.name}, returning ACK`);
-            const commandFunctionURI = 'https://discordblingbot.azurewebsites.net/api/' + bodyObject.meessage.interaction.name + 'processing';
-            const options = {
-                method: 'POST',
-                body: JSON.stringify(bodyObject)
-            };
-            const commandAnswer = fetch(commandFunctionURI, options);
-            return { jsonBody: { type: 6 }, status: 200 };
-        }
 
         // Verifying request as is required by Discord
         context.info('Attempting to verify request...');
@@ -59,6 +45,20 @@ app.http('discordCommandHandler', {
         // Validation of message is complete and the request is not a PING, so sending the payload to the appropriate function based
         // on the command name and sending the options along with it.
         
+        // If request is a COMPONENT response, return ACK (ACK type 6)
+        if (bodyObject.type == 3) {
+            const interactionName = bodyObject.message.interaction.name;
+            context.info(`Component Message response received from ${bodyObject.message.interaction.name}, returning ACK`);
+            context.info(`Component Message response received from ${interactionName}, returning ACK`);
+            const commandFunctionURI = 'https://discordblingbot.azurewebsites.net/api/' + interactionName + 'processing';
+            const options = {
+                method: 'POST',
+                body: JSON.stringify(bodyObject)
+            };
+            const commandAnswer = fetch(commandFunctionURI, options);
+            return { jsonBody: { type: 6 }, status: 200 };
+        }
+
         // Check if the 'name' property exists in the 'data' object of 'bodyObject'
         if (bodyObject.data.name) {
             const commandFunctionURI = 'https://discordblingbot.azurewebsites.net/api/' + bodyObject.data.name;

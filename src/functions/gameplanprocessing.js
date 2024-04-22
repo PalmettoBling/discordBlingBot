@@ -1,4 +1,6 @@
 const { app } = require('@azure/functions');
+const CosmosClient = require('@azure/cosmos').CosmosClient;
+const axios = require('axios');
 
 app.http('gameplanprocessing', {
     methods: ['GET', 'POST'],
@@ -12,9 +14,9 @@ app.http('gameplanprocessing', {
         context.info("Request body: " + body);
         const componentData = bodyObject.data;
         context.info("Component Data: " + JSON.stringify(componentData));
-        var playHost = componentData.custom_id;
+        var playHost = componentData.custom_id; //name of the host
         var categoryId = componentData.values[0];
-        var twitchLogin;
+        var twitchLogin; //twitch login for the channel (based on Discord server now...)
         var qs;
 
         // Connecting to DB client
@@ -22,7 +24,8 @@ app.http('gameplanprocessing', {
         const client = await new CosmosClient(process.env.CosmosDbConnectionSetting);
         const database = await client.database('playdatesBot');
         const container = await database.container('twitchAuthorization');
-
+        
+        context.info("Getting Twitch Login based on Discord server...");
         switch (bodyObject.guild_id) {
             case '828634187175034900':
                 twitchLogin = "palmettobling"
