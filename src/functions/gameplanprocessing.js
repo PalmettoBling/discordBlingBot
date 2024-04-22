@@ -200,7 +200,7 @@ app.http('gameplanprocessing', {
 
             await axios.post(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}`, 
                 {
-                    'content': `The show "${segmentTitle}" on **${gameStartText}*8 has been updated to ${scheduleSegmentUpdate.data.data.segments[0].category.name}.`
+                    'content': `The show "${segmentTitle}" on **${gameStartText}** has been updated to __${scheduleSegmentUpdate.data.data.segments[0].category.name}__.`
                 },
                 {
                     'Content-Type': 'application/json'
