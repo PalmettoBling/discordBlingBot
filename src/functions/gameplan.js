@@ -14,7 +14,6 @@ app.http('gameplan', {
         const bodyObject = JSON.parse(body);
         context.info("Request body: " + body);
         const commandOptions = bodyObject.data.options;
-        context.info("Command Options: " + JSON.stringify(commandOptions));
         var menuSelectionItems = [];
         
         // Getting App Token
@@ -27,7 +26,6 @@ app.http('gameplan', {
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
         });
-        context.info("App Token Request Status: " + JSON.stringify(appToken.status));
         
         // Searching for Category ID from game
         try {
@@ -45,26 +43,32 @@ app.http('gameplan', {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 }
             });
-            context.info("Game Response: " + JSON.stringify(gameResponse.data));
         } catch (error) {
             context.error("An error occurred while searching for the game.");
             context.error(error);
         }
 
         // Processing the gameResponse data for likeliest matches
+        context.info("Processing the gameResponse data for likeliest matches.")
         var categoryArray = gameResponse.data.data;
         var menuCategoryArray = categoryArray.filter(category => category.name.toLowerCase().includes(gameName.toLowerCase()));
-        context.log("Menu Category Array: " + JSON.stringify(menuCategoryArray));
         for (var i = 0; i < menuCategoryArray.length; i++) {
             menuSelectionItems[i] = {
                 'label': menuCategoryArray[i].name,
                 'value': menuCategoryArray[i].id
             };
         }
+        if (menuSelectionItems.length == 0) {
+            context.info("No matches found, sending all categories returned.");
+            for (var j = 0; j < menuCategoryArray.length; j++) {
+                context.info("Adding Menu Category Array item: " + JSON.stringify(menuCategoryArray[j].name));
+                menuSelectionItems.push({ 'label': menuCategoryArray[j].name, 'value': menuCategoryArray[j].id })
+            }
+        }
         menuSelectionItems.push({ 'label': "None of these games are what I'm playing.", 'value': "none" });
-        context.info("Menu Selection Items: " + JSON.stringify(menuSelectionItems));
 
         try {
+            context.info("Sending the game selection menu.");
             var discordGameMenuSelection = await axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
             {
                 'content': 'Please verify the Game:',
@@ -80,20 +84,19 @@ app.http('gameplan', {
                     }
                 ]
             });
-            context.info("Game Selection Menu Sent: " + discordGameMenuSelection);
+            return { status: 200 };
         } catch (error) {
             context.error("An error occurred while sending the game selection menu.");
             context.error(error); 
             axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
                 {
-                    'content': `Error sending or getting menu selection items.`
+                    'content': `Error sending or getting menu selection items.`,
+                    'components': []
                 },
                 {
                     'Content-Type': 'application/json'
                 });
             return { status: 200 };
         }
-
-        return { status: 200 };
     }
 });

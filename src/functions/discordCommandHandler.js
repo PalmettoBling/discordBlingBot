@@ -11,7 +11,6 @@ app.http('discordCommandHandler', {
 
         // Getting Headers and body from request
         // Body is also parsed into an object for reference
-        context.info('Attempting to get headers...');
         const signature = await request.headers.get('X-Signature-Ed25519');
         const timestamp = await request.headers.get('X-Signature-Timestamp');
         const body = await request.text();
@@ -71,7 +70,6 @@ app.http('discordCommandHandler', {
                 body: JSON.stringify(bodyObject)
             };
             const commandAnswer = fetch(commandFunctionURI, options);
-            
             try {
                 return { jsonBody: { type: 5 }, status: 200 };
             } catch (error) {
