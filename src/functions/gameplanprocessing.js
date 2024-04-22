@@ -14,10 +14,13 @@ app.http('gameplanprocessing', {
         context.info("Request body: " + body);
         const componentData = bodyObject.data;
         context.info("Component Data: " + JSON.stringify(componentData));
-        var playHost = componentData.custom_id; //name of the host
+        var userInputHost = componentData.custom_id; //name of the host
+        var playHost = userInputHost.toLowerCase(); //lowercase name of the host
+        context.log("Play Host: " + playHost);
         var categoryId = componentData.values[0];
         var twitchLogin; //twitch login for the channel (based on Discord server now...)
         var qs;
+        var scheduleResponse;
 
         // Connecting to DB client
         context.info("Connecting to Cosmos DB...")
@@ -84,13 +87,14 @@ app.http('gameplanprocessing', {
             qs = new URLSearchParams({
                 broadcaster_id: twitchInfo.twitchUserId
             });
-            var scheduleResponse = await axios.get(`https://api.twitch.tv/helix/schedule?${qs}`, {
+            scheduleResponse = await axios.get(`https://api.twitch.tv/helix/schedule?${qs}`, {
                 headers: {
                     'Authorization': `Bearer ${tokenInfo.access_token}`,
                     'Client-Id': process.env.TWITCH_CLIENT_ID,
                     'Content-Type': 'application/x-www-form-urlencoded'
                 }
             });
+            context.info("Schedule Response: " + JSON.stringify(scheduleResponse.data));
         } catch (error) {
             context.error("An error occurred while getting the schedule.");
             context.error(error);
@@ -103,14 +107,15 @@ app.http('gameplanprocessing', {
                 });
             return { status: 200 };
         }
-        context.info("Schedule Response: " + JSON.stringify(scheduleResponse.data));
         
         //Iterate through schedule to find the segment ID for the host
-        const scheduleArray = scheduleResponse.data.segments;
+        context.info("scheduleResponse.data.segments: " + JSON.stringify(scheduleResponse.data.data.segments));
+        const scheduleArray = scheduleResponse.data.data.segments;
+        context.info("Schedule Array: " + JSON.stringify(scheduleArray));
         context.info("iterating through schedule array...");
         for (let i = 0; i < scheduleArray.length; i++) {
             context.info("Segment Title: " + scheduleArray[i].title);
-            if ((scheduleArray[i].title).toLowercase().includes(playHost) && (scheduleArray[i].is_recurring === true)) {
+            if ((scheduleArray[i].title).toLowerCase().includes(playHost) && (scheduleArray[i].is_recurring === true)) {
                 context.info("Found segment for host: " + playHost);
                 var segmentId = scheduleArray[i].id;
                 var segmentTitle = scheduleArray[i].title;
