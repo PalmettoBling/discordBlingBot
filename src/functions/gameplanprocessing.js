@@ -12,7 +12,8 @@ app.http('gameplanprocessing', {
         context.info("Request body: " + body);
         const componentData = bodyObject.data;
         context.info("Component Data: " + JSON.stringify(componentData));
-        var playHost = componentData.values[0];
+        var playHost = componentData.custom_id;
+        var categoryId = componentData.values[0];
         var twitchLogin;
         var qs;
 
@@ -56,10 +57,17 @@ app.http('gameplanprocessing', {
         try {
             // Getting Twitch Access Token
             context.info("Getting Twitch Access Token...");
-            var tokenResponse = await axios.post(`https://id.twitch.tv/oauth2/token?client_id=${process.env.TWITCH_CLIENT_ID}&client_secret=${process.env.TWITCH_CLIENT_SECRET}&grant_type=refresh_token&refresh_token=${twitchInfo.refresh_token}`);
+            qs = new URLSearchParams({
+                client_id: process.env.TWITCH_CLIENT_ID,
+                client_secret: process.env.TWITCH_CLIENT_SECRET,
+                grant_type: 'refresh_token',
+                refresh_token: twitchInfo.refresh_token
+            })
+            var tokenResponse = await axios.post(`https://id.twitch.tv/oauth2/token?${qs}`);
             tokenInfo = tokenResponse.data;
             twitchInfo.access_token = tokenInfo.access_token;
             twitchInfo.refresh_token = tokenInfo.refresh_token;
+            twitchInfo.scope = tokenInfo.scope;
             container.items.upsert(twitchInfo);
             context.info("Updated tokens in DB");
         } catch (error) {

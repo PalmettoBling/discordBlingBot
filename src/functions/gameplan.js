@@ -51,65 +51,43 @@ app.http('gameplan', {
         }
 
         try {
-            var discordGameMenuSelection = await axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, {
-                'content': `Please select the Host and Game: `,
-                'components': [{
-                    'type': 1,
-                    'components': [{
-                        'type': 3,
-                        'custom_id': 'playhost',
-                        'options': [
+            var discordGameMenuSelection = await axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
+            {
+                'content': 'Please verify the Game:',
+                'components': [
+                    {
+                        'type': 1,
+                        'components': [
                             {
-                                'label': 'PalmettoBling',
-                                'value': 'palmettobling'
-                            },
-                            {
-                                'label': 'Xbox Playdates US',
-                                'value': 'xboxplaydatesus'
-                            },
-                            {
-                                'label': 'Xbox Playdates GB',
-                                'value': 'xboxplaydatesgb'
-                            },
-                            {
-                                'label': 'Xbox Playdates CA',
-                                'value': 'xboxplaydatesca'
-                            },
-                            {
-                                'label': 'Xbox Ambassadors',
-                                'value': 'xboxambassadors'
-                            }
-                        ]
-                    }],
-                    'type': 1,
-                    'components': [{
-                        'type': 3,
-                        'custom_id': 'gameSelection',
-                        'options': [
-                            {
-                                'label': gameResponse.data.data[0].name,
-                                'value': gameResponse.data.data[0].id
-                            },
-                            {
-                                'label': gameResponse.data.data[1].name,
-                                'value': gameResponse.data.data[1].id
-                            },
-                            {
-                                'label': gameResponse.data.data[2].name,
-                                'value': gameResponse.data.data[2].id
-                            },
-                            {
-                                'label': gameResponse.data.data[3].name,
-                                'value': gameResponse.data.data[3].id
-                            },
-                            {
-                                'label': "None of these...",
-                                "value": "none"
-                            }
-                        ]
-                    }]
-                }]
+                                'type': 3,
+                                'custom_id': `${commandOptions[0].name}`,
+                                'options': [
+                                    {
+                                        'label': gameResponse.data.data[0].name,
+                                        'value': gameResponse.data.data[0].id
+                                    },
+                                    {
+                                        'label': gameResponse.data.data[1].name,
+                                        'value': gameResponse.data.data[1].id
+                                    },
+                                    {
+                                        'label': gameResponse.data.data[2].name,
+                                        'value': gameResponse.data.data[2].id
+                                    },
+                                    {
+                                        'label': gameResponse.data.data[3].name,
+                                        'value': gameResponse.data.data[3].id
+                                    },
+                                    {
+                                        'label': "None of these games are what I'm playing.",
+                                        'value': "none"
+                                    }
+                                ]
+                            }]
+                    }
+                ]
             });
+            context.info("Game Selection Menu Sent: " + discordGameMenuSelection);
         } catch (error) {
             context.error("An error occurred while sending the game selection menu.");
             context.error(error); 

@@ -20,6 +20,18 @@ app.http('discordCommandHandler', {
         const bodyObject = JSON.parse(body);
         context.info("Request body: " + body);
 
+        // If request is a COMPONENT response, return ACK (ACK type 6)
+        if (bodyObject.type == 3) {
+            context.info(`Component Message response received from ${bodyObject.meessage.interaction.name}, returning ACK`);
+            const commandFunctionURI = 'https://discordblingbot.azurewebsites.net/api/' + bodyObject.meessage.interaction.name + 'processing';
+            const options = {
+                method: 'POST',
+                body: JSON.stringify(bodyObject)
+            };
+            const commandAnswer = fetch(commandFunctionURI, options);
+            return { jsonBody: { type: 6 }, status: 200 };
+        }
+
         // Verifying request as is required by Discord
         context.info('Attempting to verify request...');
         const isVerified = await nacl.sign.detached.verify(
@@ -43,23 +55,6 @@ app.http('discordCommandHandler', {
             context.info("Request is a PING, returning PONG");
             return { jsonBody: { type: 1 }, status: 200 };
         } 
-        
-        // If request is a COMPONENT response, return ACK (ACK type 6)
-        if (bodyObject.type == 3) {
-            context.info(`Component Message response received from ${bodyObject.meessage.interaction.name}, returning ACK`);
-            const commandFunctionURI = 'https://discordblingbot.azurewebsites.net/api/' + bodyObject.meessage.interaction.name + 'processing';
-            const options = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-Signature-Ed25519': signature,
-                    'X-Signature-Timestamp': timestamp
-                },
-                body: JSON.stringify(bodyObject)
-            };
-            const commandAnswer = fetch(commandFunctionURI, options);
-            return { jsonBody: { type: 6 }, status: 200 };
-        }
 
         // Validation of message is complete and the request is not a PING, so sending the payload to the appropriate function based
         // on the command name and sending the options along with it.
