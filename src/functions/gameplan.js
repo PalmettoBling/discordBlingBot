@@ -15,6 +15,7 @@ app.http('gameplan', {
         context.info("Request body: " + body);
         const commandOptions = bodyObject.data.options;
         context.info("Command Options: " + JSON.stringify(commandOptions));
+        var menuSelectionItems = [];
         
         // Getting App Token
         const appToken = await axios.post('https://id.twitch.tv/oauth2/token', {
@@ -50,6 +51,19 @@ app.http('gameplan', {
             context.error(error);
         }
 
+        // Processing the gameResponse data for likeliest matches
+        var categoryArray = gameResponse.data.data;
+        var menuCategoryArray = categoryArray.filter(category => category.name.toLowerCase().includes(gameName.toLowerCase()));
+        context.log("Menu Category Array: " + JSON.stringify(menuCategoryArray));
+        for (var i = 0; i < menuCategoryArray.length; i++) {
+            menuSelectionItems[i] = {
+                'label': menuCategoryArray[i].name,
+                'value': menuCategoryArray[i].id
+            };
+        }
+        menuSelectionItems.push({ 'label': "None of these games are what I'm playing.", 'value': "none" });
+        context.info("Menu Selection Items: " + JSON.stringify(menuSelectionItems));
+
         try {
             var discordGameMenuSelection = await axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
             {
@@ -61,28 +75,7 @@ app.http('gameplan', {
                             {
                                 'type': 3,
                                 'custom_id': `${commandOptions[0].value}`,
-                                'options': [
-                                    {
-                                        'label': gameResponse.data.data[0].name,
-                                        'value': gameResponse.data.data[0].id
-                                    },
-                                    {
-                                        'label': gameResponse.data.data[1].name,
-                                        'value': gameResponse.data.data[1].id
-                                    },
-                                    {
-                                        'label': gameResponse.data.data[2].name,
-                                        'value': gameResponse.data.data[2].id
-                                    },
-                                    {
-                                        'label': gameResponse.data.data[3].name,
-                                        'value': gameResponse.data.data[3].id
-                                    },
-                                    {
-                                        'label': "None of these games are what I'm playing.",
-                                        'value': "none"
-                                    }
-                                ]
+                                'options': menuSelectionItems
                             }]
                     }
                 ]

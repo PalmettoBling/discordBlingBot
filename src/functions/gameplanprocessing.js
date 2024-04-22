@@ -21,6 +21,19 @@ app.http('gameplanprocessing', {
         var twitchLogin; //twitch login for the channel (based on Discord server now...)
         var qs;
         var scheduleResponse;
+        var scheduleSegmentUpdate;
+        var segmentId;
+        var segmentTitle;
+        var segmentStartTime;
+
+        try {
+            // bodyObject.message.id
+            const deleteFollowup = axios.delete(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/${bodyObject.message.id}`);
+            context.info("Follow up message deleted: " + deleteFollowup.status);
+        } catch (error) {  
+            context.error("An error occurred while removing the follow up message.");
+            context.error(error);
+        }
 
         // Connecting to DB client
         context.info("Connecting to Cosmos DB...")
@@ -84,6 +97,7 @@ app.http('gameplanprocessing', {
         
         // Get Schedule for Channel
         try {
+            context.info("Getting the schedule for the channel...")
             qs = new URLSearchParams({
                 broadcaster_id: twitchInfo.twitchUserId
             });
@@ -94,7 +108,6 @@ app.http('gameplanprocessing', {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 }
             });
-            context.info("Schedule Response: " + JSON.stringify(scheduleResponse.data));
         } catch (error) {
             context.error("An error occurred while getting the schedule.");
             context.error(error);
@@ -109,25 +122,24 @@ app.http('gameplanprocessing', {
         }
         
         //Iterate through schedule to find the segment ID for the host
-        context.info("scheduleResponse.data.segments: " + JSON.stringify(scheduleResponse.data.data.segments));
         const scheduleArray = scheduleResponse.data.data.segments;
-        context.info("Schedule Array: " + JSON.stringify(scheduleArray));
         context.info("iterating through schedule array...");
         for (let i = 0; i < scheduleArray.length; i++) {
             context.info("Segment Title: " + scheduleArray[i].title);
             if ((scheduleArray[i].title).toLowerCase().includes(playHost) && (scheduleArray[i].is_recurring === true)) {
                 context.info("Found segment for host: " + playHost);
-                var segmentId = scheduleArray[i].id;
-                var segmentTitle = scheduleArray[i].title;
-                var segmentStartTime = scheduleArray[i].start_time;
+                segmentId = scheduleArray[i].id;
+                segmentTitle = scheduleArray[i].title;
+                segmentStartTime = scheduleArray[i].start_time;
                 context.info("Segment ID: " + segmentId);
                 break;
             }
         }
 
         // Check game selection data
-        if (componentData.values[1] === "none") {
-            axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
+        if (componentData.values[0] === "none") {
+            context.info("Returning message if 'no' game is selected")
+            await axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
             {
                 'content': `If the game was not in the selection list, please review the initial spelling.`
             },
@@ -136,25 +148,43 @@ app.http('gameplanprocessing', {
             });
             return { status: 200 };
         } else {
-            var categoryId = componentData.values[1];
+            context.info("Setting game selection: " + componentData.values[0])
+            var categoryId = componentData.values[0];
         }
 
-        // Update the segment with the category ID
-        qs = new URLSearchParams({
-            broadcaster_id: twitchInfo.twitchUserId,
-            id: segmentId,
-            category_id: categoryId
-        });
-        const scheduleSegmentUpdate = await axios.patch(`https://api.twitch.tv/helix/schedule/segment?${qs}`, {
-            headers: {
-                'Authorization': `Bearer ${tokenInfo.access_token}`,
-                'Client-Id': process.env.TWITCH_CLIENT_ID,
-                'Content-Type': 'application/json'
-            }
-        });
-
+        try {
+            // Update the segment with the category ID
+            qs = new URLSearchParams({
+                broadcaster_id: twitchInfo.twitchUserId,
+                id: segmentId,
+            });
+            scheduleSegmentUpdate = await axios.patch(`https://api.twitch.tv/helix/schedule/segment?${qs}`, 
+            {
+                'category_id': categoryId
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${tokenInfo.access_token}`,
+                    'Client-Id': process.env.TWITCH_CLIENT_ID,
+                    'Content-Type': 'application/json'
+                }
+            });
+            context.info("Schedule Segment Update: " + JSON.stringify(scheduleSegmentUpdate.data));
+        } catch (error) {
+            context.error("An error occurred while updating the schedule segment.");
+            context.error(error);
+            axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
+                {
+                    'content': `Error updating the schedule segment for ${segmentTitle} on the ${twitchLogin} Twitch channel.`
+                },
+                {
+                    'Content-Type': 'application/json'
+                });
+            return { status: 200 };
+        }
+        
        // Update discord on status of schedule update
-       if (scheduleSegmentUpdate.status === 204) {
+       if (scheduleSegmentUpdate.status === 200) {
             context.info("Schedule segment updated successfully.");
             var options = {
                 weekday: 'long',
@@ -166,26 +196,26 @@ app.http('gameplanprocessing', {
                 timeZoneName: 'short'
             };
             var gameStartText = new Intl.DateTimeFormat('en', options).format(new Date(segmentStartTime));
+            context.info("Game Start Time: " + gameStartText);
 
-            axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
+            await axios.post(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}`, 
                 {
-                    'content': `The show ${segmentTitle} on ${gameStartText} has been updated to ${scheduleSegmentUpdate.data.segments[0].category.name}.`
+                    'content': `The show "${segmentTitle}" on **${gameStartText}*8 has been updated to ${scheduleSegmentUpdate.data.data.segments[0].category.name}.`
                 },
                 {
                     'Content-Type': 'application/json'
                 });
             return { status: 200 };
         } else {
-        context.warn("Schedule segment update failed.");
-        axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
-            {
-                'content': `Error processing, but it is possible the update to the Twitch schedule succeeded. Please check the schedule to confirm.`
-            },
-            {
-                'Content-Type': 'application/json'
-            });
-        return { status: 200 };
+            context.warn("Schedule segment update failed.");
+            axios.post(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}`, 
+                {
+                    'content': `Error processing, but it is possible the update to the Twitch schedule succeeded. Please check the schedule to confirm.`
+                },
+                {
+                    'Content-Type': 'application/json'
+                });
+            return { status: 200 };
+        }
     }
-}
-
 });
