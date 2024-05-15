@@ -38,28 +38,43 @@ app.http('addquote', {
                                             'value': 'xboxplaydatesus'
                                         }
                                     ]
-                                },
+                                }
+                            ]
+                        },
+                        {
+                            'type': 1,
+                            'components': [
                                 {
                                     'type': 4,
                                     'custom_id': 'quoteText',
                                     'style': 1,
                                     'label': 'Quote Text',
                                     'placeholder': 'Enter what was said here.'
-                                },
+                                }
+                            ]
+                        },
+                        {
+                            'type': 1,
+                            'components': [
                                 {
                                     'type': 4,
                                     'custom_id': 'quoteAttribution',
                                     'style': 1,
                                     'label': 'Attribution',
                                     'placeholder': 'Who said the thing?  Put that here.'
-                                },
+                                }
+                            ]
+                        },
+                        {
+                            'type': 1,
+                            'components': [
                                 {
                                     'type': 4,
                                     'custom_id': 'quoteGame',
                                     'style': 1,
                                     'label': 'Game',
                                     'placeholder': 'What game were we playing?'
-                                },
+                                }
                             ]
                         }
                     ]
