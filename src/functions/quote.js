@@ -7,13 +7,6 @@ app.http('quote', {
     authLevel: 'anonymous',
     handler: async (request, context) => {
         context.log(`Http function processed request for url "${request.url}"`);
-
-        /*
-        // Getting Headers and body from request
-        context.info('Attempting to get headers...');
-        const signature = await request.headers.get('X-Signature-Ed25519');
-        const timestamp = await request.headers.get('X-Signature-Timestamp');
-        */
        
         // Connecting to DB client
         context.info("Connecting to Cosmos DB...")
