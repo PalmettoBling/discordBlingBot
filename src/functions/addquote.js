@@ -11,75 +11,49 @@ app.http('addquote', {
         const body = await request.text();
         const bodyObject = JSON.parse(body);
         const commandOptions = bodyObject.data.options;
+        context.info("Request body: " + body);
 
         try {
             context.info("Sending component to gather quote data, then be processed by addquoteprocessing");
             var discordGameMenuSelection = await axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`,
                 {
-                    'content': 'Please enter the quote information below:',
+                    'title': 'Add A Quote',
+                    'custom_id': 'quote_entry_form',
                     'components': [
                         {
                             'type': 1,
-                            'components': [
-                                {
-                                    'type': 3,
-                                    'custom_id': 'channelSelect',
-                                    'options': [
-                                        {
-                                            'label': 'XboxPlaydatesCA',
-                                            'value': 'xboxplaydatesca'
-                                        },
-                                        {
-                                            'label': 'XboxPlaydatesGB',
-                                            'value': 'xboxplaydatesgb'
-                                        },
-                                        {
-                                            'label': 'XboxPlaydatesUS',
-                                            'value': 'xboxplaydatesus'
-                                        }
-                                    ]
-                                }
-                            ]
+                            'components': [{
+                                'type': 4,
+                                'custom_id': 'quote_text',
+                                'style': 1,
+                                'label': 'Quote Text',
+                                'placeholder': 'Enter the quote text here...'
+                            }]
+                        }/*,
+                        {
+                            'type': 1,
+                            'components': [{
+                                'type': 4,
+                                'custom_id': 'quote_attribution',
+                                'style': 1,
+                                'label': 'Quote Attribution',
+                                'placeholder': 'Enter who said the quote here...'
+                            }]
                         },
                         {
                             'type': 1,
-                            'components': [
-                                {
-                                    'type': 4,
-                                    'custom_id': 'quoteText',
-                                    'style': 1,
-                                    'label': 'Quote Text',
-                                    'placeholder': 'Enter what was said here.'
-                                }
-                            ]
-                        },
-                        {
-                            'type': 1,
-                            'components': [
-                                {
-                                    'type': 4,
-                                    'custom_id': 'quoteAttribution',
-                                    'style': 1,
-                                    'label': 'Attribution',
-                                    'placeholder': 'Who said the thing?  Put that here.'
-                                }
-                            ]
-                        },
-                        {
-                            'type': 1,
-                            'components': [
-                                {
-                                    'type': 4,
-                                    'custom_id': 'quoteGame',
-                                    'style': 1,
-                                    'label': 'Game',
-                                    'placeholder': 'What game were we playing?'
-                                }
-                            ]
-                        }
+                            'components': [{
+                                'type': 4,
+                                'custom_id': 'quote_game',
+                                'style': 1,
+                                'label': 'Game',
+                                'placeholder': 'Enter the game played while the quote was said...'
+                            }]
+                        }*/
                     ]
                 }
-            )
+            );
+            return { status: 200 };
         } catch (error) {
             context.error("An error occurred while sending the quote entry form.");
             context.error(error);
@@ -94,13 +68,5 @@ app.http('addquote', {
             return { status: 200 };
         
         }
-
-        // user enters channel to add the quote initially
-
-        // sends user component
-
-        // addquote_processing function called
-
-        return { status: 200};
     }
 });
