@@ -69,7 +69,7 @@ app.http('gameplan', {
 
         try {
             context.info("Sending the game selection menu.");
-            var discordGameMenuSelection = await axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
+            var discordGameMenuSelectionResponse = await axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
             {
                 'content': 'Please verify the Game:',
                 'components': [
