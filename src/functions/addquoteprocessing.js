@@ -75,7 +75,7 @@ app.http('addquoteprocessing', {
         const stringQuote = `#${quoteData.id}: ${quoteData.quote} - ${quoteData.attribution} (${quoteData.dateOfQuote})`;
         context.log("String Quote: " + stringQuote);
 
-        axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, {
+        await axios.post(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}`, {
             content: "Added the quote: " + stringQuote
         });
 

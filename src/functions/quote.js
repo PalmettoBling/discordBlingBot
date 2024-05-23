@@ -20,13 +20,13 @@ app.http('quote', {
         const bodyObject = JSON.parse(body);
         context.info("Request body: " + body);
         const commandOptions = bodyObject.data.options;
-        let quoteId = commandOptions ? commandOptions[1].value : null;
         let channelName = commandOptions[0].value;
-        context.info("Quote ID: " + quoteId);
         const applicationId = bodyObject.application_id;
         const interactionToken = bodyObject.token;
         context.info("App ID: " + applicationId + " and Interaction ID: " + interactionToken);
 
+        let quoteId = commandOptions[1] ? commandOptions[1].value : null;
+        context.info("Quote ID: " + quoteId);
                
         // Connecting to DB client
         context.info("Connecting to Cosmos DB...")
