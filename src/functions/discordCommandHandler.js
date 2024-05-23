@@ -45,7 +45,7 @@ app.http('discordCommandHandler', {
         // on the command name and sending the options along with it.
         
         // If request is a COMPONENT response, return ACK (ACK type 6)
-        if (bodyObject.type == 3) {
+        if ((bodyObject.type == 3) || (bodyObject.type == 5)) {
             const interactionName = bodyObject.message.interaction.name;
             context.info(`Component Message response received from ${interactionName}, returning ACK`);
             const commandFunctionURI = 'https://discordblingbot.azurewebsites.net/api/' + interactionName + 'processing';

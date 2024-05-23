@@ -15,46 +15,52 @@ app.http('addquote', {
 
         try {
             context.info("Sending component to gather quote data, then be processed by addquoteprocessing");
+
+            const form = new FormData();
+
             
-            var discordQuoteSubmitFormResponse = await axios.post(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}`,
+            var discordQuoteSubmitFormResponse = await axios.post(`https://discord.com/api/interactions/${bodyObject.id}/${bodyObject.token}/callback`,
                 {
-                    "title": "Quote Entry Form",
-                    "custom_id": "quote_submit_form",
-                    "components": [
-                        {
-                            "type": 1,
-                            "components": [{
-                                "type": 4,
-                                "custom_id": "quote_text",
-                                "label": "Quote Text: ",
-                                "style": 1,
-                                "placeholder": "Enter the quote text here...",
-                                "required": true
-                            }]
-                        },
-                        {
-                            "type": 1,
-                            "components": [{
-                                "type": 4,
-                                "custom_id": "quote_attribution",
-                                "label": "Quote Attribution: ",
-                                "style": 1,
-                                "placeholder": "Enter the quote attribution here...",
-                                "required": true
-                            }]
-                        },
-                        {
-                            "type": 1,
-                            "components": [{
-                                "type": 4,
-                                "custom_id": "quote_game",
-                                "label": "Game: ",
-                                "style": 1,
-                                "placeholder": "Enter the game here...",
-                                "required": true
-                            }]
-                        }
-                    ]
+                    "type": 9,
+                    "data": {
+                        "title": "Quote Entry Form",
+                        "custom_id": "quote_submit_form",
+                        "components": [
+                            {
+                                "type": 1,
+                                "components": [{
+                                    "type": 4,
+                                    "custom_id": "quote_text",
+                                    "label": "Quote Text: ",
+                                    "style": 1,
+                                    "placeholder": "Enter the quote text here...",
+                                    "required": true
+                                }]
+                            },
+                            {
+                                "type": 1,
+                                "components": [{
+                                    "type": 4,
+                                    "custom_id": "quote_attribution",
+                                    "label": "Quote Attribution: ",
+                                    "style": 1,
+                                    "placeholder": "Enter the quote attribution here...",
+                                    "required": true
+                                }]
+                            },
+                            {
+                                "type": 1,
+                                "components": [{
+                                    "type": 4,
+                                    "custom_id": "quote_game",
+                                    "label": "Game: ",
+                                    "style": 1,
+                                    "placeholder": "Enter the game here...",
+                                    "required": true
+                                }]
+                            }
+                        ]
+                    }
                 }
             );
             return { status: 200 };
