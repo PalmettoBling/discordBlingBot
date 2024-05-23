@@ -14,12 +14,6 @@ app.http('quote', {
         const signature = await request.headers.get('X-Signature-Ed25519');
         const timestamp = await request.headers.get('X-Signature-Timestamp');
         */
-       
-        // Connecting to DB client
-        context.info("Connecting to Cosmos DB...")
-        const client = await new CosmosClient(process.env.CosmosDbConnectionSetting);
-        const database = await client.database('playdatesBot');
-        const container = await database.container('xboxplaydatesus');
         
         // Getting the request body and options
         const body = await request.text();
@@ -27,10 +21,18 @@ app.http('quote', {
         context.info("Request body: " + body);
         const commandOptions = bodyObject.data.options;
         let quoteId = commandOptions ? commandOptions[0].value : null;
+        let channelName = commandOptions[1].value;
         context.info("Quote ID: " + quoteId);
         const applicationId = bodyObject.application_id;
         const interactionToken = bodyObject.token;
         context.info("App ID: " + applicationId + " and Interaction ID: " + interactionToken);
+
+               
+        // Connecting to DB client
+        context.info("Connecting to Cosmos DB...")
+        const client = await new CosmosClient(process.env.CosmosDbConnectionSetting);
+        const database = await client.database('playdatesBot');
+        const container = await database.container(channelName);
 
         // Getting random number for quote if no options are provided
         if (!quoteId) {

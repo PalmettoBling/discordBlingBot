@@ -62,7 +62,7 @@ app.http('addquoteprocessing', {
         try {
             context.info("Connecting to DB");
             const dbResponse = await container.items.upsert(quoteData);
-            context.log("DB Response: " + JSON.stringify(dbResponse));
+            context.log("DB Response: " + dbResponse);
         } catch (error) {
             context.error("An error occurred while adding the quote to the database.");
             context.error(error);
