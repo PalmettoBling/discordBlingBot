@@ -48,13 +48,13 @@ app.http('addquoteprocessing', {
         context.info("Submit Date: " + submitDate);
         
         const quoteData = {
-            id: quoteCount[0],
-            quote: quoteText,
-            attribution: quoteAttribution,
-            dateOfQuote: submitDate,
-            game: quoteGame,
-            submitter: quoteSubmitter, 
-            dateAdded: submitDate
+            id: `${quoteCount[0]}`,
+            quote: `${quoteText}`,
+            attribution: `${quoteAttribution}`,
+            dateOfQuote: `${submitDate}`,
+            game: `${quoteGame}`,
+            submitter: `${quoteSubmitter}`, 
+            dateAdded: `${submitDate}`
         };
         context.info("Quote Data: " + JSON.stringify(quoteData));
 
