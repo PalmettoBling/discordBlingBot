@@ -15,7 +15,8 @@ app.http('addquote', {
 
         try {
             context.info("Sending component to gather quote data, then be processed by addquoteprocessing");
-            var discordGameMenuSelection = await axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`,
+            
+            var discordGameMenuSelection = await axios.post(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}`,
                 {
                     'title': 'Add A Quote',
                     'custom_id': 'quote_entry_form',
@@ -29,7 +30,7 @@ app.http('addquote', {
                                 'label': 'Quote Text',
                                 'placeholder': 'Enter the quote text here...'
                             }]
-                        }/*,
+                        },
                         {
                             'type': 1,
                             'components': [{
@@ -49,7 +50,7 @@ app.http('addquote', {
                                 'label': 'Game',
                                 'placeholder': 'Enter the game played while the quote was said...'
                             }]
-                        }*/
+                        }
                     ]
                 }
             );
