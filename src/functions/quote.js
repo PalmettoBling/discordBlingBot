@@ -56,7 +56,7 @@ app.http('quote', {
         context.info("Quote Item: " + JSON.stringify(quoteItem));
 
         // Returning error if quote doesn't exist else returning the quote
-        if (quoteItem === null) {
+        if (quoteItem == null) {
             context.warn("Quote not found.");
             axios.patch(`https://discord.com/api/webhooks/${applicationId}/${interactionToken}/messages/@original`, {
                 'content': 'Quote not found.'

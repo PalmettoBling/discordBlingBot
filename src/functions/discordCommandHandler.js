@@ -72,8 +72,7 @@ app.http('discordCommandHandler', {
             //calling external funciton
             const commandAnswer = fetch(commandFunctionURI, options);
             
-            // Removing this try catch because can't send a modal if already ACK-ed an interaction
-            /*try {
+            try {
                 return { jsonBody: { type: 5 }, status: 200 };
             } catch (error) {
                 context.error("An error occurred while processing the command.");
@@ -84,7 +83,7 @@ app.http('discordCommandHandler', {
                         "content": "An error occurred while processing the command."
                         }}, 
                     status: 200 };
-            }*/
+            }
         } else {
             try {
                 context.error("Invalid command name.");
