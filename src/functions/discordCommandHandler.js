@@ -35,7 +35,6 @@ app.http('discordCommandHandler', {
         }
 
         // If request is a PING type message, return PONG (ACK type 1)
-        
         if (bodyObject.type == 1) {
             context.info("Request is a PING, returning PONG");
             return { jsonBody: { type: 1 }, status: 200 };
@@ -45,7 +44,7 @@ app.http('discordCommandHandler', {
         // on the command name and sending the options along with it.
         
         // If request is a COMPONENT response, return ACK (ACK type 6)
-        if ((bodyObject.type == 3) || (bodyObject.type == 5)) {
+        if (bodyObject.type == 3) {
             const interactionName = bodyObject.message.interaction.name;
             context.info(`Component Message response received from ${interactionName}, returning ACK`);
             const commandFunctionURI = 'https://discordblingbot.azurewebsites.net/api/' + interactionName + 'processing';
@@ -57,8 +56,24 @@ app.http('discordCommandHandler', {
             return { jsonBody: { type: 6 }, status: 200 };
         }
 
+        if (bodyObject.type == 5) {
+            const interactionName = bodyObject.data.custom_id;
+            context.info(`Modal Message response received from ${interactionName}, returning ACK`);
+            const commandFunctionURI = 'https://discordblingbot.azurewebsites.net/api/' + interactionName + 'processing';
+            const options = {
+                method: 'POST',
+                body: JSON.stringify(bodyObject)
+            };
+            const commandAnswer = fetch(commandFunctionURI, options);
+            return { jsonBody: { type: 6 }, status: 200 };
+        }
+
         // Check if the 'name' property exists in the 'data' object of 'bodyObject'
         if (bodyObject.data.name) {
+            if (bodyObject.data.name == 'addquote') {
+                return { jsonBody: { 'type': 9, 'data': addQuoteModal() }, status: 200 }; 
+            }
+
             const commandFunctionURI = 'https://discordblingbot.azurewebsites.net/api/' + bodyObject.data.name;
             const options = {
                 method: 'POST',
@@ -111,3 +126,56 @@ app.http('discordCommandHandler', {
         }
     }
 });
+
+function addQuoteModal() {
+    return {
+        "title": "Quote Entry Form",
+        "custom_id": "addquote",
+        "components": [
+            {
+                "type": 1,
+                "components": [{
+                    "type": 4,
+                    "custom_id": "quote_text",
+                    "label": "Quote Text: ",
+                    "style": 1,
+                    "placeholder": "Enter the quote text here...",
+                    "required": true
+                }]
+            },
+            {
+                "type": 1,
+                "components": [{
+                    "type": 4,
+                    "custom_id": "quote_attribution",
+                    "label": "Quote Attribution: ",
+                    "style": 1,
+                    "placeholder": "Enter the quote attribution here...",
+                    "required": true
+                }]
+            },
+            {
+                "type": 1,
+                "components": [{
+                    "type": 4,
+                    "custom_id": "quote_game",
+                    "label": "Game: ",
+                    "style": 1,
+                    "placeholder": "Enter the game here...",
+                    "required": true
+                }]
+            },
+            {
+                "type": 1,
+                "components": [{
+                    "type": 4,
+                    "custom_id": "quote_channel",
+                    "label": "Twitch Channel: ",
+                    "style": 1,
+                    "placeholder": "XboxAmbassadors, XboxPlaydatesUS, XboxPlaydatesCA, XboxPlaydatesGB, etc...",
+                    "required": true
+                }]
+            }
+        ]
+    };
+}

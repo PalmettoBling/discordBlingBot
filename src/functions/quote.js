@@ -39,7 +39,7 @@ app.http('quote', {
                 query: "SELECT VALUE COUNT(1) FROM c"
             };
             const { resources: quoteCount } = await container.items.query(querySpec).fetchAll();
-            context.info("Quote count: " + quoteCount[0])
+            context.info("Quote count: " + quoteCount[0]);
 
             quoteId = await Math.floor(Math.random() * (quoteCount[0] - 1));
             context.info("Generated quote ID: " + quoteId);

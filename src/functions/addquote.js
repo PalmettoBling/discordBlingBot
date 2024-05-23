@@ -14,9 +14,31 @@ app.http('addquote', {
         context.info("Request body: " + body);
 
         try {
+            await axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
+                {
+                    'content': `Let's get this quote party started!`,
+                    'components': []
+                },
+                {
+                    'Content-Type': 'application/json'
+                });
+        } catch (error) {
+            context.warn("Something went wrong very quickly...");
+            axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
+                {
+                    'content': `Error updating the discord message after initial acknowledgement.`,
+                    'components': []
+                },
+                {
+                    'Content-Type': 'application/json'
+                });
+            return { status: 200 };
+        }
+
+        try {
             context.info("Sending component to gather quote data, then be processed by addquoteprocessing");
 
-            var discordQuoteSubmitFormResponse = await axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`,
+            var discordQuoteSubmitFormResponse = await axios.post(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}`,
                 {
                     "title": "Quote Entry Form",
                     "custom_id": "quote_submit_form",
