@@ -15,9 +15,9 @@ app.http('addquoteprocessing', {
         
         // getting the quote information from the modal
         const quoteText = bodyObject.data.components[0].components[0].value;
-        const quoteAttribution = bodyObject.data.components[0].components[1].value;
-        const quoteGame = bodyObject.data.components[0].components[2].value;
-        const quoteChannel = (bodyObject.data.components[0].components[3].value).toLowerCase();
+        const quoteAttribution = bodyObject.data.components[1].components[0].value;
+        const quoteGame = bodyObject.data.components[2].components[0].value;
+        const quoteChannel = (bodyObject.data.components[3].components[0].value).toLowerCase();
         const quoteSubmitter = bodyObject.member.user.username;
 
         // Connecting to DB client
