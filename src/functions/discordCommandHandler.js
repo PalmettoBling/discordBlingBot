@@ -511,19 +511,218 @@ async function addquotemodal(bodyObject) {
     });
 }
 
-
-
-
-
-function cancelshow() {
+async function cancelshowcommand(bodyObject) {
     context.info("Cancelling show command called. Cancelling on Twitch...");
-    //code
+    const commandOptions = bodyObject.data.options;
+    // Connecting to DB client
+    context.info("Connecting to Cosmos DB...")
+    const client = new CosmosClient(process.env.CosmosDbConnectionSetting);
+    const database = client.database('playdatesBot');
+    const container = database.container('twitchAuthorization');
+
+    context.info("Getting Twitch Login based on Discord server...");
+    switch (bodyObject.guild_id) {
+        case '828634187175034900':
+            twitchLogin = "palmettobling"
+            break;
+        case '208988601474613249':
+            switch (commandOptions[0].value) {
+                case "xboxplaydatesus":
+                    twitchLogin = "xboxplaydatesus"
+                    break;
+                case "xboxplaydatesgb":
+                    twitchLogin = "xboxplaydatesgb"
+                    break;
+                case "xboxplaydatesca":
+                    twitchLogin = "xboxplaydatesca"
+                    break;
+            }
+            break;
+        case '309400100130783232':
+            twitchLogin = "xboxambassadors"
+            break;
+    }
+    context.info("Twitch Login: " + twitchLogin);
+
+    // Getting token and twitch user ID from Cosmos DB
+    context.info("Reading Twitch Authorization from Cosmos DB...");
+    const twitchQuerySpec = {
+        query: `SELECT * FROM c WHERE c.login = '${twitchLogin}'`
+    };
+    const { resources } = await container.items.query(twitchQuerySpec).fetchAll();
+    const twitchInfo = resources[0];
+
+    // Getting Twitch Access Token
+    context.info("Getting Twitch Access Token...");
+    qs = new URLSearchParams({
+        client_id: process.env.TWITCH_CLIENT_ID,
+        client_secret: process.env.TWITCH_CLIENT_SECRET,
+        grant_type: 'refresh_token',
+        refresh_token: twitchInfo.refresh_token
+    })
+    var tokenResponse = await axios.post(`https://id.twitch.tv/oauth2/token?${qs}`);
+    tokenInfo = tokenResponse.data;
+    twitchInfo.access_token = tokenInfo.access_token;
+    twitchInfo.refresh_token = tokenInfo.refresh_token;
+    twitchInfo.scope = tokenInfo.scope;
+    container.items.upsert(twitchInfo);
+    context.info("Updated tokens in DB");
+
+    context.info("Getting the schedule for the channel...");
+    var qs = new URLSearchParams({
+        broadcaster_id: twitchInfo.twitchUserId
+    });
+
+    var scheduleResponse = await axios.get(`https://api.twitch.tv/helix/schedule?${qs}`, {
+        headers: {
+            'Authorization': `Bearer ${tokenInfo.access_token}`,
+            'Client-Id': process.env.TWITCH_CLIENT_ID,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+    });
+
+    //Iterate through schedule to find the segment ID for the host
+    const scheduleArray = scheduleResponse.data.data.segments;
+    context.info("iterating through schedule array...");
+    for (let i = 0; i < scheduleArray.length; i++) {
+        if ((scheduleArray[i].title).toLowerCase().includes(commandOptions[0].value) && (scheduleArray[i].is_recurring === true)) {
+            segmentId = scheduleArray[i].id;
+            segmentTitle = scheduleArray[i].title;
+            segmentStartTime = scheduleArray[i].start_time;
+            break;
+        }
+    }
+
+    // Update the segment to be cancelled
+    context.info("Updating the schedule segment as canceled...");
+    qs = new URLSearchParams({
+        broadcaster_id: twitchInfo.twitchUserId,
+        id: segmentId,
+    });
+    scheduleSegmentUpdate = await axios.patch(`https://api.twitch.tv/helix/schedule/segment?${qs}`, 
+    {
+        'is_canceled': true,
+    },
+    {
+        headers: {
+            'Authorization': `Bearer ${tokenInfo.access_token}`,
+            'Client-Id': process.env.TWITCH_CLIENT_ID,
+            'Content-Type': 'application/json'
+        }
+    });
+
+    if (scheduleSegmentUpdate.status === 200) {
+        context.info("Schedule segment updated successfully.");
+        var options = {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            hour: 'numeric',
+            minute: 'numeric',
+            timeZone: 'America/Los_Angeles',
+            timeZoneName: 'short'
+        };
+        var gameStartText = new Intl.DateTimeFormat('en', options).format(new Date(segmentStartTime));
+        context.info("Game Start Time: " + gameStartText);
+
+        await axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
+            {
+                'content': `The show "${segmentTitle}" on **${gameStartText}** has been __CANCELED__.`,
+                'components': []
+            },
+            {
+                'Content-Type': 'application/json'
+            });
+        return { status: 200 };
+    } else {
+        context.warn("Schedule segment update failed.");
+        axios.patch(`https://discord.com/api/webhooks/${bodyObject.application_id}/${bodyObject.token}/messages/@original`, 
+            {
+                'content': `Error processing, but it is possible the update to the Twitch schedule succeeded. Please check the schedule to confirm.`,
+                'components': []
+            },
+            {
+                'Content-Type': 'application/json'
+            });
+        return { status: 200 };
+    }
 }
 
 function quote() {
     context.info("Quote command called. Retrieving quote...");
-    //code
-    //calling a quote
+    // Getting the request body and options
+    const body = await request.text();
+    const bodyObject = JSON.parse(body);
+    context.info("Request body: " + body);
+    const commandOptions = bodyObject.data.options;
+    let channelName = commandOptions[0].value;
+    const applicationId = bodyObject.application_id;
+    const interactionToken = bodyObject.token;
+    context.info("App ID: " + applicationId + " and Interaction ID: " + interactionToken);
+
+    let quoteId = commandOptions[1] ? commandOptions[1].value : null;
+    context.info("Quote ID: " + quoteId);
+            
+    // Connecting to DB client
+    context.info("Connecting to Cosmos DB...")
+    const client = await new CosmosClient(process.env.CosmosDbConnectionSetting);
+    const database = await client.database('playdatesBot');
+    const container = await database.container(channelName);
+
+    // Getting random number for quote if no options are provided
+    if (!quoteId) {
+        context.info("No quote ID found, generating random quote ID...");
+        const querySpec = {
+            query: "SELECT VALUE COUNT(1) FROM c"
+        };
+        const { resources: quoteCount } = await container.items.query(querySpec).fetchAll();
+        context.info("Quote count: " + quoteCount[0]);
+
+        quoteId = await Math.floor(Math.random() * (quoteCount[0] - 1));
+        context.info("Generated quote ID: " + quoteId);
+    }
+
+    // Getting quote from DB
+    context.info("Reading quote from Cosmos DB...");          
+    const quoteQuerySpec = {
+        query: `SELECT * FROM c WHERE c.id = '${quoteId}'`
+    };
+    const { resources } = await container.items.query(quoteQuerySpec).fetchAll();
+    context.log("Resources: " + JSON.stringify(resources));                                                                                                                                                                                                                                                                                                                                                                                                     
+    const quoteItem = resources[0];         
+    context.info("Quote Item: " + JSON.stringify(quoteItem));
+
+    // Returning error if quote doesn't exist else returning the quote
+    if (quoteItem == null) {
+        context.warn("Quote not found.");
+        axios.patch(`https://discord.com/api/webhooks/${applicationId}/${interactionToken}/messages/@original`, {
+            'content': 'Quote not found.'
+        },
+        {
+            "Content-Type": "application/json"
+        });
+        return { status: 200, body: { error: 'Quote not found.' }};
+    } else {
+        //formatting the quote to be returned
+        const quoteReturn = `#${quoteItem.id}: ${quoteItem.quote} - ${quoteItem.attribution} (${quoteItem.dateOfQuote})`
+        context.info("Quote Return: " + quoteReturn);
+
+        // Sending quote to Discord
+        try {
+            context.info("Sending quote to Discord...");
+            axios.patch(`https://discord.com/api/webhooks/${applicationId}/${interactionToken}/messages/@original`, {
+                'content': quoteReturn
+            },
+            {
+                "Content-Type": "application/json"
+            });
+            return { status: 200, body: { message: 'Quote sent successfully.' }};
+        } catch (error) {
+            context.error("An error occurred while sending the quote.");
+            context.error(error);
+            return { status: 500, body: { error: 'An error occurred while sending the quote.' }};
+        }
+    }
 }
 
 function scheduleupdate() {
