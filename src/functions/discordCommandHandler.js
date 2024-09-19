@@ -3,89 +3,6 @@ const nacl = require('tweetnacl');
 const CosmosClient = require('@azure/cosmos').CosmosClient;
 const axios = require('axios');
 
-app.http('discordCommandHandler', {
-    methods: ['GET', 'POST'],
-    authLevel: 'anonymous',
-    handler: async (request, context) => {
-        context.log(`Http function processed request for url "${request.url}"`);
-
-        //##SECURITY VERIFICATION##
-        const PUBLIC_KEY = process.env.DISCORD_PUBLIC_KEY;
-        // Getting Headers and body from request
-        // Body is also parsed into an object for reference
-        const signature = await request.headers.get('X-Signature-Ed25519');
-        const timestamp = await request.headers.get('X-Signature-Timestamp');
-        const body = await request.text();
-        const bodyObject = JSON.parse(body);
-        //context.info("Request body: " + body);
-        // Verifying request as is required by Discord
-        context.info('Attempting to verify request...');
-        const isVerified = await nacl.sign.detached.verify(
-            Buffer.from(timestamp + body),
-            Buffer.from(signature, "hex"),
-            Buffer.from(PUBLIC_KEY, "hex")
-        );
-        // If request is not verified, return 401
-        if (!isVerified) {
-            context.warn("Request not verified, returning 401");
-            return {
-                status: 401,
-                body: { error: 'invalid request signature' }
-            };
-        } else {
-            context.info("Request verified.");
-        }
-        //##END SECURITY VERIFICATION##
-
-        //##TYPE CHECK##
-        // THIS IS USED IN RESPONSES, TYPE DOES NOT EXIST IN DATA
-        switch(bodyObject.type) {
-            case 1:
-                // PING request, sending PONG response
-                context.info("Request type is PING, Type 1");
-                return { jsonBody: { type: 1 }, status: 200 };
-                //break;  
-            case 2:
-                context.info("Application Command, Type 2");
-                context.info("Command: " + bodyObject.data.name);
-                let commandName = bodyObject.data.name + "command";
-                [commandName](bodyObject);
-                break;
-            case 3:
-                // THESE ARE THE PROCESSING commands
-                context.info("Message Component, Type 3");
-                context.info(bodyObject.message.interaction.name + " was called.");
-                let messageProcessingName = bodyObject.message.interaction.name + "processing";
-                [messageProcessingName](bodyObject);
-                break;
-            case 4:
-                context.info("Autocomplete?, Type 4");
-                //currently do not use
-                break;
-            case 5:
-                context.info("Modal Submit, Type 5");
-                context.info(bodyObject.data.custom_id + " was called.");
-                let modalProcessingName = bodyObject.data.custom_id + "modal";
-                [modalProcessingName](bodyObject);
-                break;
-            default: 
-            //Revisit what this actually is?
-                if(bodyObject.data.name) {
-                    context.info("Command call, not a response. Executing command: " + bodyObject.data.name);
-                    [bodyObject.data.name](bodyObject);                
-                    break;
-                } else {
-                    context.warn("Unknown command type, returning 401");
-                    return { jsonBody: { 
-                        type: 4, 
-                        data: {
-                            "content": "This is awkward, the bot can't find the command name... You should probably tell Bling..."
-                            }}, 
-                        status: 200 };
-                }
-        }
-    }
-});
 
 async function gameplancommand(bodyObject) {
     context.info("Gameplan command called. Sending Modal...");
@@ -384,8 +301,6 @@ async function twitchCategoryUpdate(gameResponseId, channelNameInput, hostNameIn
     }
 }
 
-
-
 function addquotecommand(bodyObject) {
     context.info("Add Quote command called. Sending Modal...");
     let addQuoteModalData = {
@@ -648,7 +563,7 @@ async function cancelshowcommand(bodyObject) {
     }
 }
 
-function quote() {
+async function quote() {
     context.info("Quote command called. Retrieving quote...");
     // Getting the request body and options
     const body = await request.text();
@@ -731,3 +646,96 @@ function scheduleupdate() {
     //not implemented
 }
 
+app.http('discordCommandHandler', {
+    methods: ['GET', 'POST'],
+    authLevel: 'anonymous',
+    handler: async (request, context) => {
+        context.log(`Http function processed request for url "${request.url}"`);
+
+        //##SECURITY VERIFICATION##
+        const PUBLIC_KEY = process.env.DISCORD_PUBLIC_KEY;
+        // Getting Headers and body from request
+        // Body is also parsed into an object for reference
+        const signature = await request.headers.get('X-Signature-Ed25519');
+        const timestamp = await request.headers.get('X-Signature-Timestamp');
+        const body = await request.text();
+        const bodyObject = JSON.parse(body);
+        
+        //context.info("Request body: " + body);
+        // Verifying request as is required by Discord
+        /*context.info('Attempting to verify request...');
+        const isVerified = await nacl.sign.detached.verify(
+            Buffer.from(timestamp + body),
+            Buffer.from(signature, "hex"),
+            Buffer.from(PUBLIC_KEY, "hex")
+        );*/
+
+        //TESTING ITEM
+        isVerified = true;
+
+
+        // If request is not verified, return 401
+        if (!isVerified) {
+            context.warn("Request not verified, returning 401");
+            return {
+                status: 401,
+                body: { error: 'invalid request signature' }
+            };
+        } else {
+            context.info("Request verified.");
+        }
+        //##END SECURITY VERIFICATION##
+
+        //##TYPE CHECK##
+        // THIS IS USED IN RESPONSES, TYPE DOES NOT EXIST IN DATA
+        switch(bodyObject.type) {
+            case "1":
+                // PING request, sending PONG response
+                context.info("Request type is PING, Type 1");
+                return { jsonBody: { type: 1 }, status: 200 };
+                //break;  
+            case "2":
+                context.info("Application Command, Type 2");
+                context.info("Command: " + bodyObject.data.name);
+                let commandName = bodyObject.data.name + "command";
+                const commandToExecute = new Function(`return ${commandName}()`)
+                commandToExecute(bodyObject);
+                break;
+            case "3":
+                // THESE ARE THE PROCESSING commands
+                context.info("Message Component, Type 3");
+                context.info(bodyObject.message.interaction.name + " was called.");
+                let messageProcessingName = bodyObject.message.interaction.name + "processing";
+                const responseToExecute = new Function(`return ${messageProcessingName}()`);
+                responseToExecute(bodyObject);
+                break;
+            case "4":
+                context.info("Autocomplete?, Type 4");
+                //currently do not use
+                break;
+            case "5":
+                context.info("Modal Submit, Type 5");
+                context.info(bodyObject.data.custom_id + " was called.");
+                let modalProcessingName = bodyObject.data.custom_id + "modal";
+                const modalToExecute = new Function(`return ${modalProcessingName}()`);
+                modalToExecute(bodyObject);
+                break;
+            default: 
+            //Revisit what this actually is?
+                if(bodyObject.data.name) {
+                    context.info("Command call, not a response. Executing command: " + bodyObject.data.name);
+                    const commandToExecute = new Function(`return ${bodyObject.data.name}()`)
+                    commandToExecute(bodyObject);              
+                    break;
+                } else {
+                    context.warn("Unknown command type, returning 401");
+                    return { jsonBody: { 
+                        type: 4, 
+                        data: {
+                            "content": "This is awkward, the bot can't find the command name... You should probably tell Bling..."
+                            }}, 
+                        status: 200 };
+                }
+        }
+    }
+}); 
