@@ -20,19 +20,19 @@ app.http('quote', {
         const bodyObject = JSON.parse(body);
         context.info("Request body: " + body);
         const commandOptions = bodyObject.data.options;
-        let channelName = commandOptions[0].value;
+        //let channelName = commandOptions[0].value;
         const applicationId = bodyObject.application_id;
         const interactionToken = bodyObject.token;
         context.info("App ID: " + applicationId + " and Interaction ID: " + interactionToken);
 
-        let quoteId = commandOptions[1] ? commandOptions[1].value : null;
+        let quoteId = commandOptions[0] ? commandOptions[0].value : null;
         context.info("Quote ID: " + quoteId);
                
         // Connecting to DB client
         context.info("Connecting to Cosmos DB...")
         const client = await new CosmosClient(process.env.CosmosDbConnectionSetting);
         const database = await client.database('playdatesBot');
-        const container = await database.container(channelName);
+        const container = await database.container('xboxplaydates');
 
         // Getting random number for quote if no options are provided
         if (!quoteId) {

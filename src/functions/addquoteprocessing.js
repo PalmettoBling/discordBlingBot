@@ -17,7 +17,7 @@ app.http('addquoteprocessing', {
         const quoteText = bodyObject.data.components[0].components[0].value;
         const quoteAttribution = bodyObject.data.components[1].components[0].value;
         const quoteGame = bodyObject.data.components[2].components[0].value;
-        const quoteChannel = (bodyObject.data.components[3].components[0].value).toLowerCase();
+        //const quoteChannel = (bodyObject.data.components[3].components[0].value).toLowerCase();
         const quoteSubmitter = bodyObject.member.user.username;
 
         // Connecting to DB client
@@ -25,7 +25,7 @@ app.http('addquoteprocessing', {
             context.info("Connecting to Cosmos DB...")
             const client = await new CosmosClient(process.env.CosmosDbConnectionSetting);
             const database = await client.database('playdatesBot');
-            var container = await database.container(quoteChannel);
+            var container = await database.container(`xboxplaydates`);
         } catch (error) {
             context.error("An error occurred while connecting to Cosmos DB.");
             context.error(error);

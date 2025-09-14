@@ -43,7 +43,7 @@ app.http('discordCommandHandler', {
         // Validation of message is complete and the request is not a PING, so sending the payload to the appropriate function based
         // on the command name and sending the options along with it.
         
-        // If request is a COMPONENT response, return ACK (ACK type 6)
+        // If request is a COMPONENT response, return ACK (ACK type 6) then call the appropriate function
         if (bodyObject.type == 3) {
             const interactionName = bodyObject.message.interaction.name;
             context.info(`Component Message response received from ${interactionName}, returning ACK`);
@@ -56,6 +56,7 @@ app.http('discordCommandHandler', {
             return { jsonBody: { type: 6 }, status: 200 };
         }
 
+        // If request is a MODAL _RESPONSE_, return ACK (ACK type 6) then call the appropriate function
         if (bodyObject.type == 5) {
             const interactionName = bodyObject.data.custom_id;
             context.info(`Modal Message response received from ${interactionName}, returning ACK`);
@@ -69,6 +70,9 @@ app.http('discordCommandHandler', {
         }
 
         // Check if the 'name' property exists in the 'data' object of 'bodyObject'
+        // Checking if this is to present a modal?
+        // If so, return the modal (ACK type 9)
+        // If not a modal response, then it sends to external function based on command name
         if (bodyObject.data.name) {
             if (bodyObject.data.name == 'addquote') {
                 return { jsonBody: { 'type': 9, 'data': addQuoteModal() }, status: 200 }; 
@@ -87,6 +91,7 @@ app.http('discordCommandHandler', {
             //calling external funciton
             const commandAnswer = fetch(commandFunctionURI, options);
             
+            // Responding with ACK (ACK type 5) to avoid timeout
             try {
                 return { jsonBody: { type: 5 }, status: 200 };
             } catch (error) {
@@ -162,17 +167,6 @@ function addQuoteModal() {
                     "label": "Game: ",
                     "style": 1,
                     "placeholder": "Enter the game here...",
-                    "required": true
-                }]
-            },
-            {
-                "type": 1,
-                "components": [{
-                    "type": 4,
-                    "custom_id": "quote_channel",
-                    "label": "Twitch Channel: ",
-                    "style": 1,
-                    "placeholder": "XboxAmbassadors, XboxPlaydatesUS, XboxPlaydatesCA, XboxPlaydatesGB, etc...",
                     "required": true
                 }]
             }
