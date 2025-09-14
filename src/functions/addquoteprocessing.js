@@ -25,7 +25,7 @@ app.http('addquoteprocessing', {
             context.info("Connecting to Cosmos DB...")
             const client = await new CosmosClient(process.env.CosmosDbConnectionSetting);
             const database = await client.database('playdatesBot');
-            var container = await database.container(`xboxplaydates`);
+            var container = await database.container(`xboxplaydatesus`);
         } catch (error) {
             context.error("An error occurred while connecting to Cosmos DB.");
             context.error(error);

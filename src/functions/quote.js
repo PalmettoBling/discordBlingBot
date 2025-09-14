@@ -32,7 +32,7 @@ app.http('quote', {
         context.info("Connecting to Cosmos DB...")
         const client = await new CosmosClient(process.env.CosmosDbConnectionSetting);
         const database = await client.database('playdatesBot');
-        const container = await database.container('xboxplaydates');
+        const container = await database.container('xboxplaydatesus');
 
         // Getting random number for quote if no options are provided
         if (!quoteId) {

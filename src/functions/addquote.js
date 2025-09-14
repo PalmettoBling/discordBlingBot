@@ -1,3 +1,5 @@
+// Dead function?  Replaced by modal in discordCommandHandler.js?
+
 const { app } = require('@azure/functions');
 const CosmosClient = require('@azure/cosmos').CosmosClient;
 const axios = require('axios');
